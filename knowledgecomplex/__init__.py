@@ -5,6 +5,7 @@
 from knowledgecomplex.schema import SchemaBuilder, vocab, text, TextDescriptor
 from knowledgecomplex.graph import KnowledgeComplex
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
+from knowledgecomplex.io import save_graph, load_graph, dump_graph
 
 __all__ = [
     "SchemaBuilder",
@@ -15,4 +16,7 @@ __all__ = [
     "ValidationError",
     "SchemaError",
     "UnknownQueryError",
+    "save_graph",
+    "load_graph",
+    "dump_graph",
 ]
