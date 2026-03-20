@@ -32,21 +32,26 @@ pip install -e ".[dev]"
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text
 
 # 1. Define a schema
-sb = SchemaBuilder(namespace="aaa")
-sb.add_vertex_type("spec",     attributes={"title": text(), "domain": text()})
-sb.add_vertex_type("guidance", attributes={"title": text(), "domain": text()})
-sb.add_edge_type("verification",
-    attributes={"status": vocab("passing", "failing", "pending")})
-sb.add_face_type("assurance")
+sb = SchemaBuilder(namespace="ex")
+sb.add_vertex_type("actor",    attributes={"name": text()})
+sb.add_vertex_type("activity", attributes={"name": text()})
+sb.add_vertex_type("resource", attributes={"name": text()})
+sb.add_edge_type("performs",     attributes={"role": vocab("lead", "support")})
+sb.add_edge_type("requires",    attributes={"mode": vocab("read", "write")})
+sb.add_edge_type("responsible", attributes={"level": vocab("owner", "steward")})
+sb.add_face_type("operation")
 
 # 2. Build an instance
 kc = KnowledgeComplex(schema=sb)
-kc.add_vertex("spec-001",     type="spec",     uri="file:///docs/spec-001.md",
-              title="Spec for Verification", domain="aaa")
-kc.add_vertex("guidance-001", type="guidance", uri="file:///docs/guidance-001.md",
-              title="Guidance for Verification", domain="aaa")
-kc.add_edge("ver-001", type="verification",
-            vertices={"spec-001", "guidance-001"}, status="passing")
+kc.add_vertex("alice",   type="actor",    name="Alice")
+kc.add_vertex("etl-run", type="activity", name="Daily ETL")
+kc.add_vertex("dataset", type="resource", name="Sales DB")
+
+kc.add_edge("e1", type="performs",    vertices={"alice", "etl-run"},   role="lead")
+kc.add_edge("e2", type="requires",   vertices={"etl-run", "dataset"}, mode="write")
+kc.add_edge("e3", type="responsible", vertices={"alice", "dataset"},   level="owner")
+
+kc.add_face("op1", type="operation", edges={"e1", "e2", "e3"})
 
 # 3. Query
 df = kc.query("vertices")   # built-in SPARQL template
