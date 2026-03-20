@@ -301,10 +301,71 @@ class SchemaBuilder:
         else:
             raise TypeError(f"Unknown attribute spec type: {type(attr_spec)}")
 
+    def _validate_parent(self, parent: str | None, expected_kind: str) -> None:
+        """Validate parent type exists and has the correct kind."""
+        from knowledgecomplex.exceptions import SchemaError
+        if parent is None:
+            return
+        if parent not in self._types:
+            raise SchemaError(f"Parent type '{parent}' is not registered")
+        if self._types[parent]["kind"] != expected_kind:
+            raise SchemaError(
+                f"Parent type '{parent}' is kind '{self._types[parent]['kind']}', "
+                f"expected '{expected_kind}'"
+            )
+
+    def _collect_inherited_attributes(self, type_name: str) -> dict:
+        """Walk the parent chain and collect all inherited attributes."""
+        inherited = {}
+        current = self._types[type_name].get("parent")
+        while current is not None:
+            parent_attrs = self._types[current].get("attributes", {})
+            # Earlier ancestors are overridden by closer ancestors
+            for k, v in parent_attrs.items():
+                if k not in inherited:
+                    inherited[k] = v
+            current = self._types[current].get("parent")
+        return inherited
+
+    def _validate_bind(
+        self,
+        bind: dict[str, str],
+        all_attributes: dict,
+    ) -> None:
+        """Validate that bind keys exist in all_attributes and values are legal."""
+        from knowledgecomplex.exceptions import SchemaError
+        for attr_name, bound_value in bind.items():
+            if attr_name not in all_attributes:
+                raise SchemaError(
+                    f"Cannot bind '{attr_name}': attribute not found on this type or its ancestors"
+                )
+            descriptor = all_attributes[attr_name]
+            # Unwrap dict-style descriptors
+            if isinstance(descriptor, dict):
+                descriptor = descriptor.get("vocab") or descriptor.get("text")
+            if isinstance(descriptor, VocabDescriptor):
+                if bound_value not in descriptor.values:
+                    raise SchemaError(
+                        f"Cannot bind '{attr_name}' to '{bound_value}': "
+                        f"not in allowed values {descriptor.values}"
+                    )
+
+    def _apply_bind(self, shape_iri: URIRef, bind: dict[str, str]) -> None:
+        """Add sh:hasValue + sh:minCount 1 constraints for bound attributes."""
+        for attr_name, bound_value in bind.items():
+            attr_iri = self._ns[attr_name]
+            prop_shape = BNode()
+            self._shacl_graph.add((shape_iri, _SH.property, prop_shape))
+            self._shacl_graph.add((prop_shape, _SH.path, attr_iri))
+            self._shacl_graph.add((prop_shape, _SH.hasValue, Literal(bound_value)))
+            self._shacl_graph.add((prop_shape, _SH.minCount, Literal(1)))
+
     def add_vertex_type(
         self,
         name: str,
         attributes: dict[str, VocabDescriptor | TextDescriptor | Any] | None = None,
+        parent: str | None = None,
+        bind: dict[str, str] | None = None,
     ) -> "SchemaBuilder":
         """
         Declare a new vertex type (OWL subclass of KC:Vertex + SHACL node shape).
@@ -316,6 +377,10 @@ class SchemaBuilder:
         attributes : dict, optional
             Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
             or dict with "vocab"/"text" key and optional "required" flag).
+        parent : str, optional
+            Name of a registered vertex type to inherit from.
+        bind : dict, optional
+            Mapping of attribute names to fixed string values (sh:hasValue).
 
         Returns
         -------
@@ -324,14 +389,30 @@ class SchemaBuilder:
         from knowledgecomplex.exceptions import SchemaError
         if name in self._types:
             raise SchemaError(f"Type '{name}' is already registered")
+        self._validate_parent(parent, "vertex")
         attributes = attributes or {}
-        self._types[name] = {"kind": "vertex", "attributes": dict(attributes)}
+        bind = bind or {}
+
+        self._types[name] = {
+            "kind": "vertex",
+            "attributes": dict(attributes),
+            "parent": parent,
+            "bind": dict(bind),
+        }
+
+        # Validate bind against all attributes (own + inherited)
+        if bind:
+            inherited = self._collect_inherited_attributes(name)
+            all_attrs = {**inherited, **attributes}
+            self._validate_bind(bind, all_attrs)
+
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
 
         # OWL
+        superclass = self._ns[parent] if parent else _KC.Vertex
         self._owl_graph.add((type_iri, RDF.type, OWL.Class))
-        self._owl_graph.add((type_iri, RDFS.subClassOf, _KC.Vertex))
+        self._owl_graph.add((type_iri, RDFS.subClassOf, superclass))
 
         # SHACL
         self._shacl_graph.add((shape_iri, RDF.type, _SH.NodeShape))
@@ -340,12 +421,17 @@ class SchemaBuilder:
         for attr_name, attr_spec in attributes.items():
             self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
+        if bind:
+            self._apply_bind(shape_iri, bind)
+
         return self
 
     def add_edge_type(
         self,
         name: str,
         attributes: dict[str, VocabDescriptor | TextDescriptor | Any] | None = None,
+        parent: str | None = None,
+        bind: dict[str, str] | None = None,
     ) -> "SchemaBuilder":
         """
         Declare a new edge type (OWL subclass of KC:Edge + SHACL property shapes).
@@ -357,6 +443,10 @@ class SchemaBuilder:
         attributes : dict, optional
             Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
             or dict with "vocab"/"text" key and optional "required" flag).
+        parent : str, optional
+            Name of a registered edge type to inherit from.
+        bind : dict, optional
+            Mapping of attribute names to fixed string values (sh:hasValue).
 
         Returns
         -------
@@ -365,14 +455,29 @@ class SchemaBuilder:
         from knowledgecomplex.exceptions import SchemaError
         if name in self._types:
             raise SchemaError(f"Type '{name}' is already registered")
+        self._validate_parent(parent, "edge")
         attributes = attributes or {}
-        self._types[name] = {"kind": "edge", "attributes": dict(attributes)}
+        bind = bind or {}
+
+        self._types[name] = {
+            "kind": "edge",
+            "attributes": dict(attributes),
+            "parent": parent,
+            "bind": dict(bind),
+        }
+
+        if bind:
+            inherited = self._collect_inherited_attributes(name)
+            all_attrs = {**inherited, **attributes}
+            self._validate_bind(bind, all_attrs)
+
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
 
         # OWL
+        superclass = self._ns[parent] if parent else _KC.Edge
         self._owl_graph.add((type_iri, RDF.type, OWL.Class))
-        self._owl_graph.add((type_iri, RDFS.subClassOf, _KC.Edge))
+        self._owl_graph.add((type_iri, RDFS.subClassOf, superclass))
 
         # SHACL
         self._shacl_graph.add((shape_iri, RDF.type, _SH.NodeShape))
@@ -381,12 +486,17 @@ class SchemaBuilder:
         for attr_name, attr_spec in attributes.items():
             self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
+        if bind:
+            self._apply_bind(shape_iri, bind)
+
         return self
 
     def add_face_type(
         self,
         name: str,
         attributes: dict[str, Any] | None = None,
+        parent: str | None = None,
+        bind: dict[str, str] | None = None,
     ) -> "SchemaBuilder":
         """
         Declare a new face type (OWL subclass of KC:Face + SHACL property shapes).
@@ -400,6 +510,10 @@ class SchemaBuilder:
         attributes : dict, optional
             Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
             or dict with "vocab"/"text" key and optional "required" flag).
+        parent : str, optional
+            Name of a registered face type to inherit from.
+        bind : dict, optional
+            Mapping of attribute names to fixed string values (sh:hasValue).
 
         Returns
         -------
@@ -408,14 +522,29 @@ class SchemaBuilder:
         from knowledgecomplex.exceptions import SchemaError
         if name in self._types:
             raise SchemaError(f"Type '{name}' is already registered")
+        self._validate_parent(parent, "face")
         attributes = attributes or {}
-        self._types[name] = {"kind": "face", "attributes": dict(attributes)}
+        bind = bind or {}
+
+        self._types[name] = {
+            "kind": "face",
+            "attributes": dict(attributes),
+            "parent": parent,
+            "bind": dict(bind),
+        }
+
+        if bind:
+            inherited = self._collect_inherited_attributes(name)
+            all_attrs = {**inherited, **attributes}
+            self._validate_bind(bind, all_attrs)
+
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
 
         # OWL
+        superclass = self._ns[parent] if parent else _KC.Face
         self._owl_graph.add((type_iri, RDF.type, OWL.Class))
-        self._owl_graph.add((type_iri, RDFS.subClassOf, _KC.Face))
+        self._owl_graph.add((type_iri, RDFS.subClassOf, superclass))
 
         # SHACL
         self._shacl_graph.add((shape_iri, RDF.type, _SH.NodeShape))
@@ -424,7 +553,72 @@ class SchemaBuilder:
         for attr_name, attr_spec in attributes.items():
             self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
+        if bind:
+            self._apply_bind(shape_iri, bind)
+
         return self
+
+    def describe_type(self, name: str) -> dict:
+        """
+        Inspect a registered type's attributes, parent, and bindings.
+
+        Parameters
+        ----------
+        name : str
+            The registered type name.
+
+        Returns
+        -------
+        dict
+            Keys: name, kind, parent, own_attributes, inherited_attributes,
+            all_attributes, bound.
+        """
+        from knowledgecomplex.exceptions import SchemaError
+        if name not in self._types:
+            raise SchemaError(f"Type '{name}' is not registered")
+
+        info = self._types[name]
+        own_attrs = dict(info.get("attributes", {}))
+        inherited_attrs = self._collect_inherited_attributes(name)
+        # Collect bindings from ancestors
+        inherited_bind = {}
+        current = info.get("parent")
+        while current is not None:
+            parent_bind = self._types[current].get("bind", {})
+            for k, v in parent_bind.items():
+                if k not in inherited_bind:
+                    inherited_bind[k] = v
+            current = self._types[current].get("parent")
+        own_bind = dict(info.get("bind", {}))
+        all_bind = {**inherited_bind, **own_bind}
+
+        all_attrs = {**inherited_attrs, **own_attrs}
+        return {
+            "name": name,
+            "kind": info["kind"],
+            "parent": info.get("parent"),
+            "own_attributes": own_attrs,
+            "inherited_attributes": inherited_attrs,
+            "all_attributes": all_attrs,
+            "bound": all_bind,
+        }
+
+    def type_names(self, kind: str | None = None) -> list[str]:
+        """
+        List registered type names, optionally filtered by kind.
+
+        Parameters
+        ----------
+        kind : str, optional
+            Filter by "vertex", "edge", or "face".
+
+        Returns
+        -------
+        list[str]
+        """
+        if kind is None:
+            return list(self._types.keys())
+        return [n for n, info in self._types.items() if info["kind"] == kind]
 
     def promote_to_attribute(
         self,
