@@ -1,34 +1,16 @@
-# knowledgecomplex
+"""
+quickstart.py — Runnable version of the README quick-start example.
 
-A Python library for defining and instantiating **typed simplicial complexes** backed by OWL, SHACL, and SPARQL.
+Models a data pipeline as a typed simplicial complex:
+  - 4 vertices: an actor, an activity, and two resources
+  - 5 edges: performs, requires, produces, accesses, responsible
+  - 2 faces: an operation triangle and a production triangle
 
-## Overview
+Run:
+    pip install knowledgecomplex
+    python examples/quickstart.py
+"""
 
-A **knowledge complex** is a simplicial complex (vertices, edges, faces) where each element has a type governed by a formal ontology. The library provides:
-
-- **`SchemaBuilder`** — a DSL for declaring vertex/edge/face types, attributes, and vocabularies. Generates OWL and SHACL automatically.
-- **`KnowledgeComplex`** — an instance manager that adds elements, validates them against SHACL on every write, and executes named SPARQL queries.
-- **Core OWL + SHACL** — a static topological backbone: the `Element > Vertex/Edge/Face` hierarchy, boundary-cardinality axioms, and closed-triangle/boundary-closure constraints.
-
-All semantic web machinery (rdflib, pyshacl, owlrl) stays internal. The public API is pure Python.
-
-## Install
-
-```bash
-pip install knowledgecomplex
-```
-
-Or from source:
-
-```bash
-git clone https://github.com/BlockScience/knowledgecomplex.git
-cd knowledgecomplex
-pip install -e ".[dev]"
-```
-
-## Quick start
-
-```python
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text
 
 # 1. Define a schema
@@ -61,8 +43,24 @@ kc.add_face("op1",   type="operation",  boundary=["e1", "e2", "e4"])
 kc.add_face("prod1", type="production", boundary=["e1", "e3", "e5"])
 
 # 3. Query
-df = kc.query("vertices")   # built-in SPARQL template
+print("=== Vertices ===")
+df = kc.query("vertices")
 print(df)
-```
+print()
 
-See [`examples/quickstart.py`](https://github.com/blockscience/knowledgecomplex/blob/main/examples/quickstart.py) for a runnable version with topological queries included.
+# 4. Topological queries
+print("=== Boundary of face op1 ===")
+print(kc.boundary("op1"))
+print()
+
+print("=== Star of alice (all simplices containing alice) ===")
+print(kc.star("alice"))
+print()
+
+print("=== Skeleton k=1 (vertices + edges only) ===")
+print(kc.skeleton(1))
+print()
+
+# 5. Inspect the RDF
+print("=== Turtle dump ===")
+print(kc.dump_graph())

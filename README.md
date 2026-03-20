@@ -68,6 +68,8 @@ print(df)
 print(kc.dump_graph())       # Turtle string
 ```
 
+See [`examples/quickstart.py`](examples/quickstart.py) for a runnable version of this example.
+
 ## The `kc:uri` attribute
 
 Every element (vertex, edge, or face) can carry an optional `kc:uri` property pointing to its source file:
