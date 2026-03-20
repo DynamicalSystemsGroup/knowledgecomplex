@@ -1,0 +1,12 @@
+# knowledgecomplex/queries/degree.sparql
+# Degree of a vertex: count of incident edges (coboundary cardinality).
+#
+#   deg(v) = |{e in K : v in boundary(e)}|
+#
+# Usage: substitute {simplex} with the IRI of the vertex.
+
+PREFIX kc: <https://example.org/kc#>
+
+SELECT (COUNT(?edge) AS ?degree) WHERE {
+    ?edge kc:boundedBy {simplex} .
+}

@@ -614,6 +614,273 @@ class KnowledgeComplex:
         """
         return [Element(self, id) for id in self.element_ids(type=type)]
 
+    def is_subcomplex(self, ids: set[str]) -> bool:
+        """
+        Check whether a set of element IDs forms a valid subcomplex.
+
+        A set is a valid subcomplex iff it is closed under the boundary
+        operator: for every element in the set, all its boundary elements
+        are also in the set.
+
+        Parameters
+        ----------
+        ids : set[str]
+            Element identifiers to check.
+
+        Returns
+        -------
+        bool
+        """
+        if not ids:
+            return True
+        return set(ids) == self.closure(ids)
+
+    # --- Topological query helpers ---
+
+    def _iri(self, id: str) -> str:
+        """Return the full IRI string for an element ID."""
+        return f"{self._schema._base_iri}{id}"
+
+    def _type_filter_clause(self, var: str, type: str | None) -> str:
+        """Return a SPARQL clause filtering ?var by type, or empty string."""
+        if type is None:
+            return ""
+        if type not in self._schema._types:
+            raise SchemaError(f"Type '{type}' is not registered")
+        type_iri = self._ns[type]
+        return f"?{var} a/rdfs:subClassOf* <{type_iri}> ."
+
+    def _ids_from_query(self, sparql: str) -> set[str]:
+        """Execute SPARQL and return the first column as a set of element IDs."""
+        ns_str = self._schema._base_iri
+        init_ns = {
+            "kc": _KC, "rdf": RDF, "rdfs": RDFS,
+            "owl": OWL, "xsd": XSD,
+            self._schema._namespace: self._ns,
+        }
+        results = self._instance_graph.query(sparql, initNs=init_ns)
+        ids: set[str] = set()
+        for row in results:
+            val = str(row[0])
+            if val.startswith(ns_str):
+                ids.add(val[len(ns_str):])
+        return ids
+
+    # --- Topological query methods ---
+
+    def boundary(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return ∂(id): the direct faces of element id via kc:boundedBy.
+
+        For a vertex, returns the empty set.
+        For an edge, returns its 2 boundary vertices.
+        For a face, returns its 3 boundary edges.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        sparql = (
+            self._query_templates["boundary"]
+            .replace("{simplex}", f"<{self._iri(id)}>")
+            .replace("{type_filter}", self._type_filter_clause("boundary", type))
+        )
+        return self._ids_from_query(sparql)
+
+    def coboundary(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return δ(id): all simplices whose boundary contains id.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        tf = self._type_filter_clause("coboundary", type)
+        sparql = f"""\
+PREFIX kc: <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?coboundary WHERE {{
+    ?coboundary kc:boundedBy <{self._iri(id)}> .
+    {tf}
+}}"""
+        return self._ids_from_query(sparql)
+
+    def star(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return St(id): all simplices containing id as a face (transitive coboundary + self).
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        sparql = (
+            self._query_templates["star"]
+            .replace("{simplex}", f"<{self._iri(id)}>")
+            .replace("{type_filter}", self._type_filter_clause("star", type))
+        )
+        return self._ids_from_query(sparql)
+
+    def closure(self, ids: str | set[str], *, type: str | None = None) -> set[str]:
+        """Return Cl(ids): the smallest subcomplex containing ids.
+
+        Accepts a single ID or a set of IDs. When given a set, returns the
+        union of closures.
+
+        Parameters
+        ----------
+        ids : str or set[str]
+            Element identifier(s).
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        if isinstance(ids, str):
+            sparql = (
+                self._query_templates["closure"]
+                .replace("{simplex}", f"<{self._iri(ids)}>")
+                .replace("{type_filter}", self._type_filter_clause("closure", type))
+            )
+            return self._ids_from_query(sparql)
+        # Set input: use VALUES clause
+        values = " ".join(f"(<{self._iri(i)}>)" for i in ids)
+        tf = self._type_filter_clause("closure", type)
+        sparql = f"""\
+PREFIX kc: <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?closure WHERE {{
+    VALUES (?sigma) {{ {values} }}
+    ?sigma kc:boundedBy* ?closure .
+    {tf}
+}}"""
+        return self._ids_from_query(sparql)
+
+    def closed_star(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return Cl(St(id)): the closure of the star.
+
+        Always a valid subcomplex.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        return self.closure(self.star(id), type=type)
+
+    def link(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return Lk(id): Cl(St(id)) \\ St(id).
+
+        The link is the set of simplices in the closed star that do not
+        themselves contain id as a face.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        result = self.closed_star(id) - self.star(id)
+        if type is not None:
+            typed = set(self.element_ids(type=type))
+            result &= typed
+        return result
+
+    def skeleton(self, k: int) -> set[str]:
+        """Return sk_k(K): all elements of dimension <= k.
+
+        k=0: vertices only
+        k=1: vertices and edges
+        k=2: vertices, edges, and faces (everything)
+
+        Parameters
+        ----------
+        k : int
+            Maximum dimension (0, 1, or 2).
+
+        Returns
+        -------
+        set[str]
+
+        Raises
+        ------
+        ValueError
+            If k < 0 or k > 2.
+        """
+        if k < 0 or k > 2:
+            raise ValueError(f"skeleton dimension must be 0, 1, or 2; got {k}")
+        dim_classes_map = {
+            0: [_KC.Vertex],
+            1: [_KC.Vertex, _KC.Edge],
+            2: [_KC.Vertex, _KC.Edge, _KC.Face],
+        }
+        classes = dim_classes_map[k]
+        unions = " UNION ".join(
+            f"{{ ?elem a/rdfs:subClassOf* <{c}> }}" for c in classes
+        )
+        sparql = (
+            self._query_templates["skeleton"]
+            .replace("{complex}", f"<{self._complex_iri}>")
+            .replace("{dim_classes}", unions)
+        )
+        return self._ids_from_query(sparql)
+
+    def degree(self, id: str) -> int:
+        """Return deg(id): the number of edges incident to vertex id.
+
+        Parameters
+        ----------
+        id : str
+            Vertex identifier.
+
+        Returns
+        -------
+        int
+        """
+        sparql = (
+            self._query_templates["degree"]
+            .replace("{simplex}", f"<{self._iri(id)}>")
+        )
+        init_ns = {
+            "kc": _KC, "rdf": RDF, "rdfs": RDFS,
+            "owl": OWL, "xsd": XSD,
+            self._schema._namespace: self._ns,
+        }
+        results = self._instance_graph.query(sparql, initNs=init_ns)
+        for row in results:
+            return int(row[0])
+        return 0
+
     # --- Codec registration and resolution ---
 
     def register_codec(self, type_name: str, codec: Codec) -> None:

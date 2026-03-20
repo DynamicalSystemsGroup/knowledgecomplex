@@ -1,0 +1,18 @@
+# knowledgecomplex/queries/star.sparql
+# Star operator: all simplices containing sigma as a face (transitive coboundary + self).
+#
+#   St(sigma) = {tau in K : sigma is a face of tau}
+#
+# Uses the inverse property path ^kc:boundedBy* to walk zero-or-more
+# coboundary hops from sigma upward.
+#
+# Usage: substitute {simplex} with the IRI of the element.
+#        substitute {type_filter} with a type constraint or empty string.
+
+PREFIX kc:   <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?star WHERE {
+    ?star kc:boundedBy* {simplex} .
+    {type_filter}
+}

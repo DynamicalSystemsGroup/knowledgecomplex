@@ -199,6 +199,7 @@ class SchemaBuilder:
         self._shacl_graph: Any = None # rdflib.Graph, populated in _init_graphs()
         self._types: dict[str, dict] = {}  # registry: name -> {kind, attributes}
         self._attr_domains: dict[str, URIRef | None] = {}  # attr name → first domain or None if shared
+        self._queries: dict[str, str] = {}  # name -> SPARQL template string
         self._init_graphs()
 
     def _init_graphs(self) -> None:
@@ -774,6 +775,247 @@ class SchemaBuilder:
         self._shacl_graph.add((constraint, _SH.message, Literal(message)))
         return self
 
+    # --- Topological query registration and constraint escalation ---
+
+    _TOPO_PATTERNS: dict[str, tuple[str, str]] = {
+        # operation -> (graph_pattern_template, result_variable)
+        # {simplex_iri} is replaced by the target IRI,
+        # {type_filter} by a type constraint or "".
+        "boundary": (
+            "{simplex_iri} kc:boundedBy ?result . {type_filter}",
+            "result",
+        ),
+        "coboundary": (
+            "?result kc:boundedBy {simplex_iri} . {type_filter}",
+            "result",
+        ),
+        "star": (
+            "?result kc:boundedBy* {simplex_iri} . {type_filter}",
+            "result",
+        ),
+        "closure": (
+            "{simplex_iri} kc:boundedBy* ?result . {type_filter}",
+            "result",
+        ),
+        "link": (
+            # closed_star minus star: elements reachable from star's closure
+            # but not in the star itself
+            "?star_elem kc:boundedBy* {simplex_iri} . "
+            "?star_elem kc:boundedBy* ?result . "
+            "FILTER NOT EXISTS {{ ?result kc:boundedBy* {simplex_iri} }} "
+            "{type_filter}",
+            "result",
+        ),
+        "degree": (
+            "?result kc:boundedBy {simplex_iri} .",
+            "result",
+        ),
+    }
+
+    def _build_topo_sparql(
+        self,
+        operation: str,
+        *,
+        simplex_iri: str = "{simplex}",
+        target_type: str | None = None,
+    ) -> str:
+        """Build a complete SPARQL SELECT from a topological operation.
+
+        Parameters
+        ----------
+        operation :
+            One of: boundary, coboundary, star, closure, link, degree.
+        simplex_iri :
+            IRI or placeholder for the focus element.
+        target_type :
+            Optional type name to filter results.
+
+        Returns
+        -------
+        str
+            A complete SPARQL SELECT query string.
+        """
+        from knowledgecomplex.exceptions import SchemaError
+        if operation not in self._TOPO_PATTERNS:
+            raise SchemaError(
+                f"Unknown topological operation '{operation}'. "
+                f"Valid: {sorted(self._TOPO_PATTERNS)}"
+            )
+        pattern_tmpl, result_var = self._TOPO_PATTERNS[operation]
+
+        if target_type is not None:
+            if target_type not in self._types:
+                raise SchemaError(f"Type '{target_type}' is not registered")
+            type_iri = self._ns[target_type]
+            tf = f"?{result_var} a/rdfs:subClassOf* <{type_iri}> ."
+        else:
+            tf = ""
+
+        pattern = (
+            pattern_tmpl
+            .replace("{simplex_iri}", simplex_iri)
+            .replace("{type_filter}", tf)
+        )
+
+        return (
+            f"PREFIX kc: <https://example.org/kc#>\n"
+            f"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+            f"SELECT ?{result_var} WHERE {{\n"
+            f"    {pattern}\n"
+            f"}}\n"
+        )
+
+    def add_query(
+        self,
+        name: str,
+        operation: str,
+        *,
+        target_type: str | None = None,
+    ) -> "SchemaBuilder":
+        """Register a named topological query template on this schema.
+
+        The query is generated from a topological operation and optional type
+        filter, then stored internally. It is exported as a ``.sparql`` file
+        by :meth:`export` and automatically loaded by
+        :class:`~knowledgecomplex.graph.KnowledgeComplex` at runtime.
+
+        Parameters
+        ----------
+        name : str
+            Query template name (becomes the filename stem, e.g. ``"spec_coboundary"``
+            exports as ``queries/spec_coboundary.sparql``).
+        operation : str
+            Topological operation: ``"boundary"``, ``"coboundary"``, ``"star"``,
+            ``"closure"``, ``"link"``, or ``"degree"``.
+        target_type : str, optional
+            Filter results to this type (including subtypes via OWL class hierarchy).
+
+        Returns
+        -------
+        SchemaBuilder (self, for chaining)
+
+        Example
+        -------
+        >>> sb.add_query("spec_coboundary", "coboundary", target_type="verification")
+        """
+        sparql = self._build_topo_sparql(
+            operation, simplex_iri="{simplex}", target_type=target_type,
+        )
+        self._queries[name] = sparql
+        return self
+
+    def add_topological_constraint(
+        self,
+        type_name: str,
+        operation: str,
+        *,
+        target_type: str | None = None,
+        predicate: str = "min_count",
+        min_count: int = 1,
+        max_count: int | None = None,
+        message: str | None = None,
+    ) -> "SchemaBuilder":
+        """Escalate a topological query to a SHACL constraint.
+
+        Generates a ``sh:sparql`` constraint that, for each focus node of
+        *type_name*, evaluates a topological operation and checks a cardinality
+        predicate. Delegates to :meth:`add_sparql_constraint`.
+
+        Parameters
+        ----------
+        type_name : str
+            The type to constrain (must be registered).
+        operation : str
+            Topological operation: ``"boundary"``, ``"coboundary"``, ``"star"``,
+            ``"closure"``, ``"link"``, or ``"degree"``.
+        target_type : str, optional
+            Filter the topological result to this type.
+        predicate : str
+            ``"min_count"`` — at least *min_count* results (default).
+            ``"max_count"`` — at most *max_count* results.
+            ``"exact_count"`` — exactly *min_count* results.
+        min_count : int
+            Minimum count (used by ``"min_count"`` and ``"exact_count"``).
+        max_count : int, optional
+            Maximum count (used by ``"max_count"``).
+        message : str, optional
+            Custom violation message. Auto-generated if not provided.
+
+        Returns
+        -------
+        SchemaBuilder (self, for chaining)
+
+        Example
+        -------
+        >>> sb.add_topological_constraint(
+        ...     "spec", "coboundary",
+        ...     target_type="verification",
+        ...     predicate="min_count", min_count=1,
+        ...     message="Every spec must have at least one verification edge",
+        ... )
+        """
+        from knowledgecomplex.exceptions import SchemaError
+        if type_name not in self._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+        if operation not in self._TOPO_PATTERNS:
+            raise SchemaError(
+                f"Unknown topological operation '{operation}'. "
+                f"Valid: {sorted(self._TOPO_PATTERNS)}"
+            )
+
+        pattern_tmpl, result_var = self._TOPO_PATTERNS[operation]
+
+        if target_type is not None:
+            if target_type not in self._types:
+                raise SchemaError(f"Type '{target_type}' is not registered")
+            type_iri = self._ns[target_type]
+            tf = f"?{result_var} a/rdfs:subClassOf* <{type_iri}> ."
+        else:
+            tf = ""
+
+        pattern = (
+            pattern_tmpl
+            .replace("{simplex_iri}", "$this")
+            .replace("{type_filter}", tf)
+        )
+
+        # Build the HAVING clause based on predicate
+        if predicate == "min_count":
+            having = f"HAVING (COUNT(DISTINCT ?{result_var}) < {min_count})"
+        elif predicate == "max_count":
+            if max_count is None:
+                raise SchemaError("max_count predicate requires max_count parameter")
+            having = f"HAVING (COUNT(DISTINCT ?{result_var}) > {max_count})"
+        elif predicate == "exact_count":
+            having = f"HAVING (COUNT(DISTINCT ?{result_var}) != {min_count})"
+        else:
+            raise SchemaError(
+                f"Unknown predicate '{predicate}'. "
+                f"Valid: min_count, max_count, exact_count"
+            )
+
+        # Wrap pattern in OPTIONAL so GROUP BY produces a row even when
+        # there are zero matches (otherwise HAVING never fires for empty results)
+        sparql = (
+            f"PREFIX kc: <https://example.org/kc#>\n"
+            f"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+            f"SELECT $this WHERE {{\n"
+            f"    OPTIONAL {{ {pattern} }}\n"
+            f"}}\n"
+            f"GROUP BY $this\n"
+            f"{having}\n"
+        )
+
+        if message is None:
+            target_desc = f" of type '{target_type}'" if target_type else ""
+            message = (
+                f"Topological constraint violated: {operation}{target_desc} "
+                f"on '{type_name}' failed {predicate} check "
+                f"(min={min_count}, max={max_count})"
+            )
+
+        return self.add_sparql_constraint(type_name, sparql, message)
+
     def dump_owl(self) -> str:
         """Return merged OWL graph (core + user schema) as a Turtle string."""
         return self._owl_graph.serialize(format="turtle")
@@ -809,12 +1051,16 @@ class SchemaBuilder:
         p.mkdir(parents=True, exist_ok=True)
         (p / "ontology.ttl").write_text(self.dump_owl())
         (p / "shapes.ttl").write_text(self.dump_shacl())
-        if query_dirs:
+        # Write schema-generated query templates and copy external query dirs
+        if self._queries or query_dirs:
             qdir = p / "queries"
             qdir.mkdir(exist_ok=True)
-            for d in query_dirs:
-                for sparql_file in d.glob("*.sparql"):
-                    shutil.copy2(sparql_file, qdir / sparql_file.name)
+            for name, sparql_text in self._queries.items():
+                (qdir / f"{name}.sparql").write_text(sparql_text)
+            if query_dirs:
+                for d in query_dirs:
+                    for sparql_file in d.glob("*.sparql"):
+                        shutil.copy2(sparql_file, qdir / sparql_file.name)
         return p
 
     @classmethod
@@ -874,6 +1120,7 @@ class SchemaBuilder:
         sb._owl_graph = owl_graph
         sb._shacl_graph = shacl_graph
         sb._attr_domains = {}
+        sb._queries = {}
 
         # Reconstruct _types registry from OWL subclass triples
         sb._types = {}

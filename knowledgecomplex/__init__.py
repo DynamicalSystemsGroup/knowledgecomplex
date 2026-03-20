@@ -4,6 +4,7 @@
 
 from knowledgecomplex.schema import SchemaBuilder, vocab, text, TextDescriptor, Codec
 from knowledgecomplex.graph import KnowledgeComplex, Element
+from knowledgecomplex.filtration import Filtration
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
 
@@ -15,6 +16,7 @@ __all__ = [
     "Codec",
     "KnowledgeComplex",
     "Element",
+    "Filtration",
     "ValidationError",
     "SchemaError",
     "UnknownQueryError",

@@ -38,20 +38,27 @@ sb.add_vertex_type("activity", attributes={"name": text()})
 sb.add_vertex_type("resource", attributes={"name": text()})
 sb.add_edge_type("performs",     attributes={"role": vocab("lead", "support")})
 sb.add_edge_type("requires",    attributes={"mode": vocab("read", "write")})
+sb.add_edge_type("produces",    attributes={"mode": vocab("read", "write")})
+sb.add_edge_type("accesses",    attributes={"mode": vocab("read", "write")})
 sb.add_edge_type("responsible", attributes={"level": vocab("owner", "steward")})
 sb.add_face_type("operation")
+sb.add_face_type("production")
 
 # 2. Build an instance
 kc = KnowledgeComplex(schema=sb)
-kc.add_vertex("alice",   type="actor",    name="Alice")
-kc.add_vertex("etl-run", type="activity", name="Daily ETL")
-kc.add_vertex("dataset", type="resource", name="Sales DB")
+kc.add_vertex("alice",    type="actor",    name="Alice")
+kc.add_vertex("etl-run",  type="activity", name="Daily ETL")
+kc.add_vertex("dataset1", type="resource", name="JSON Records")
+kc.add_vertex("dataset2", type="resource", name="Sales DB")
 
-kc.add_edge("e1", type="performs",    vertices={"alice", "etl-run"},   role="lead")
-kc.add_edge("e2", type="requires",   vertices={"etl-run", "dataset"}, mode="write")
-kc.add_edge("e3", type="responsible", vertices={"alice", "dataset"},   level="owner")
+kc.add_edge("e1", type="performs",    vertices={"alice", "etl-run"},    role="lead")
+kc.add_edge("e2", type="requires",   vertices={"etl-run", "dataset1"}, mode="read")
+kc.add_edge("e3", type="produces",   vertices={"etl-run", "dataset2"}, mode="write")
+kc.add_edge("e4", type="accesses",   vertices={"alice", "dataset1"},   mode="read")
+kc.add_edge("e5", type="responsible", vertices={"alice", "dataset2"},  level="owner")
 
-kc.add_face("op1", type="operation", edges={"e1", "e2", "e3"})
+kc.add_face("op1",   type="operation",  boundary=["e1", "e2", "e4"])
+kc.add_face("prod1", type="production", boundary=["e1", "e3", "e5"])
 
 # 3. Query
 df = kc.query("vertices")   # built-in SPARQL template
