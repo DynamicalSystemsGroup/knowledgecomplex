@@ -1,0 +1,3 @@
+# Schema
+
+::: knowledgecomplex.schema

@@ -1,0 +1,447 @@
+"""
+knowledgecomplex.graph — KnowledgeComplex instance I/O.
+
+Public API. Never exposes rdflib, pyshacl, or owlrl objects.
+
+A KnowledgeComplex corresponds to a kc:Complex individual in the RDF graph.
+Each add_vertex / add_edge / add_face call asserts the new element AND its
+kc:hasElement membership in the complex. SHACL validation on every write
+enforces both per-element constraints (EdgeShape, FaceShape) and
+boundary-closure (ComplexShape): if a simplex is in the complex, all its
+boundary elements must be too.
+
+This enforces the "slice rule": at every point during construction, the
+elements added so far must form a valid complex. Concretely, an element's
+boundary elements must already be members before it can be added. This is
+a partial ordering — types can be interleaved as long as each element's
+boundary predecessors are present (e.g., add v1, v2, edge(v1,v2), v3,
+edge(v2,v3), ...). The simplest strategy is to add all vertices, then all
+edges, then all faces, but this is not required.
+
+SPARQL queries are encapsulated as named templates. The framework provides
+generic queries in knowledgecomplex/queries/; domain models can supply
+additional query directories via the query_dirs parameter.
+
+The optional `uri` parameter on add_vertex / add_edge / add_face allows
+callers to attach a file URI to any element via the kc:uri property. This
+is particularly useful for domain applications where each element corresponds
+to an actual document file (e.g. file:///path/to/doc.md).
+"""
+
+from __future__ import annotations
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+import pyshacl
+from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS, OWL, XSD
+
+from knowledgecomplex.exceptions import ValidationError, UnknownQueryError
+from knowledgecomplex.schema import SchemaBuilder
+
+_FRAMEWORK_QUERIES_DIR = Path(__file__).parent / "queries"
+
+# Internal namespace constants
+_KC = Namespace("https://example.org/kc#")
+
+
+def _load_query_templates(
+    extra_dirs: list[Path] | None = None,
+) -> dict[str, str]:
+    """Load .sparql files from framework queries dir and any extra directories.
+
+    Extra directories (e.g. from domain models) are loaded after the framework
+    queries. If a model provides a query with the same name as a framework query,
+    the model's version takes precedence.
+    """
+    templates: dict[str, str] = {}
+    dirs = [_FRAMEWORK_QUERIES_DIR] + (extra_dirs or [])
+    for d in dirs:
+        for path in d.glob("*.sparql"):
+            templates[path.stem] = path.read_text()
+    return templates
+
+
+class KnowledgeComplex:
+    """
+    Manage a knowledge complex instance: add elements, validate, query.
+
+    Maps to a kc:Complex individual in the RDF graph. Each element added
+    via add_vertex / add_edge / add_face becomes a kc:hasElement member of
+    this complex. Boundary-closure is enforced by ComplexShape on every write
+    (the "slice rule": every prefix of the insertion sequence is a valid complex).
+    An element's boundary elements must be added before the element itself.
+
+    Parameters
+    ----------
+    schema : SchemaBuilder
+        A fully configured schema. The merged OWL + SHACL is loaded into
+        the internal graph at construction time.
+    query_dirs : list[Path], optional
+        Additional directories containing .sparql query templates
+        (e.g. from domain models). Merged with the framework's built-in queries.
+
+    Example
+    -------
+    >>> from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab
+    >>> sb = SchemaBuilder(namespace="aaa")
+    >>> sb.add_vertex_type("spec")
+    >>> sb.add_vertex_type("guidance")
+    >>> sb.add_edge_type("verification",
+    ...     attributes={"status": vocab("passing", "failing", "pending")})
+    >>> kc = KnowledgeComplex(schema=sb)
+    >>> kc.add_vertex("spec-001", type="spec", uri="file:///docs/spec-001.md")
+    >>> kc.add_vertex("guidance-001", type="guidance")
+    >>> kc.add_edge("ver-001", type="verification",
+    ...             vertices={"spec-001", "guidance-001"}, status="passing")
+    """
+
+    def __init__(
+        self,
+        schema: SchemaBuilder,
+        query_dirs: list[Path] | None = None,
+    ) -> None:
+        self._schema = schema
+        self._query_dirs_raw = query_dirs or []
+        self._query_templates = _load_query_templates(extra_dirs=query_dirs)
+        self._instance_graph: Any = None  # rdflib.Graph, populated in _init_graph()
+        self._complex_iri: Any = None     # URIRef for the kc:Complex individual
+        self._ns = schema._ns
+        self._init_graph()
+
+    def _init_graph(self) -> None:
+        """
+        Initialize the instance graph and create the kc:Complex individual.
+
+        Parses the merged OWL from schema into the instance graph.
+        Creates a kc:Complex individual to serve as the container for all
+        elements added via add_vertex / add_edge / add_face.
+        Stores the ontology + shapes graphs separately for pyshacl calls.
+        """
+        # Parse merged OWL into instance graph (TBox + ABox in one graph)
+        self._instance_graph = Graph()
+        self._instance_graph.parse(data=self._schema.dump_owl(), format="turtle")
+
+        # Separate graphs for pyshacl validation
+        self._ont_graph = Graph()
+        self._ont_graph.parse(data=self._schema.dump_owl(), format="turtle")
+        self._shacl_graph = Graph()
+        self._shacl_graph.parse(data=self._schema.dump_shacl(), format="turtle")
+
+        # Create kc:Complex individual
+        self._complex_iri = URIRef(f"{self._schema._base_iri}_complex")
+        self._instance_graph.add((self._complex_iri, RDF.type, _KC.Complex))
+
+        # Bind prefixes for SPARQL queries and serialization
+        self._instance_graph.bind("kc", _KC)
+        self._instance_graph.bind(self._schema._namespace, self._ns)
+        self._instance_graph.bind("rdfs", RDFS)
+        self._instance_graph.bind("rdf", RDF)
+        self._instance_graph.bind("owl", OWL)
+        self._instance_graph.bind("xsd", XSD)
+
+    def _validate(self, focus_node_id: str | None = None) -> None:
+        """
+        Run pyshacl against the current instance graph.
+
+        Validates both element-level shapes (EdgeShape, FaceShape) and
+        complex-level shapes (ComplexShape boundary-closure).
+
+        Parameters
+        ----------
+        focus_node_id : str, optional
+            If provided, used in the error message to identify which element
+            triggered the failure. Validation always covers the entire graph.
+
+        Raises
+        ------
+        ValidationError
+            If validation fails. report attribute contains human-readable text.
+        """
+        conforms, _, results_text = pyshacl.validate(
+            data_graph=self._instance_graph,
+            shacl_graph=self._shacl_graph,
+            ont_graph=self._ont_graph,
+            inference="rdfs",
+            abort_on_first=False,
+        )
+        if not conforms:
+            msg = "SHACL validation failed"
+            if focus_node_id:
+                msg += f" (after adding '{focus_node_id}')"
+            raise ValidationError(msg, report=results_text)
+
+    def _assert_element(
+        self,
+        id: str,
+        type: str,
+        boundary_ids: list[str] | None,
+        attributes: dict[str, Any],
+        uri: str | None = None,
+    ) -> None:
+        """Common logic for add_vertex, add_edge, add_face."""
+        # Step 0: Python-side type guard
+        if type not in self._schema._types:
+            raise ValidationError(
+                f"Unregistered type: '{type}'",
+                report=f"Type '{type}' is not registered in the schema. "
+                       f"Registered types: {sorted(self._schema._types.keys())}",
+            )
+
+        type_iri = self._ns[type]
+        id_iri = URIRef(f"{self._schema._base_iri}{id}")
+
+        # Track triples added for rollback on validation failure
+        added_triples = []
+
+        def add(s, p, o):
+            self._instance_graph.add((s, p, o))
+            added_triples.append((s, p, o))
+
+        # Assert type
+        add(id_iri, RDF.type, type_iri)
+
+        # Assert boundary relations
+        if boundary_ids:
+            for bid in boundary_ids:
+                b_iri = URIRef(f"{self._schema._base_iri}{bid}")
+                add(id_iri, _KC.boundedBy, b_iri)
+
+        # Assert kc:uri (superstructure attribute — uses kc: namespace, not model namespace)
+        if uri is not None:
+            add(id_iri, _KC.uri, Literal(uri, datatype=XSD.anyURI))
+
+        # Assert attributes (in model namespace)
+        for attr_name, attr_value in attributes.items():
+            if isinstance(attr_value, (list, tuple)):
+                for v in attr_value:
+                    add(id_iri, self._ns[attr_name], Literal(v))
+            else:
+                add(id_iri, self._ns[attr_name], Literal(attr_value))
+
+        # Add to complex
+        add(self._complex_iri, _KC.hasElement, id_iri)
+
+        # Validate — rollback on failure
+        try:
+            self._validate(id)
+        except ValidationError:
+            for s, p, o in added_triples:
+                self._instance_graph.remove((s, p, o))
+            raise
+
+    def add_vertex(
+        self,
+        id: str,
+        type: str,
+        uri: str | None = None,
+        **attributes: Any,
+    ) -> None:
+        """
+        Assert a vertex individual and add it to the complex.
+
+        Asserts the vertex as an individual of the given type (subclass of
+        KC:Vertex), then asserts kc:hasElement on the complex. Validates via
+        SHACL. Vertices have empty boundary (k=0), so boundary-closure is
+        trivially satisfied.
+
+        Parameters
+        ----------
+        id : str
+            Local identifier for the vertex.
+        type : str
+            Vertex type name (must be a registered subclass of KC:Vertex).
+        uri : str, optional
+            Source file URI for this element (e.g. "file:///path/to/doc.md").
+            Stored as kc:uri (xsd:anyURI). At-most-one per element.
+        **attributes : Any
+            Additional attribute values for the vertex.
+
+        Raises
+        ------
+        ValidationError
+            If SHACL validation fails after assertion.
+        """
+        self._assert_element(id, type, boundary_ids=None, attributes=attributes, uri=uri)
+
+    def add_edge(
+        self,
+        id: str,
+        type: str,
+        vertices: set[str] | list[str],
+        uri: str | None = None,
+        **attributes: Any,
+    ) -> None:
+        """
+        Assert an edge individual, link to boundary vertices, and add to complex.
+
+        Asserts the edge as an individual of the given type (subclass of
+        KC:Edge), links it to exactly 2 boundary vertices via kc:boundedBy,
+        then asserts kc:hasElement on the complex. Validates via SHACL including:
+        - EdgeShape: exactly 2 distinct boundary vertices
+        - ComplexShape: boundary vertices must already be members of the complex
+
+        Parameters
+        ----------
+        id : str
+            Local identifier for the edge.
+        type : str
+            Edge type name (must be a registered subclass of KC:Edge).
+        vertices : set[str] | list[str]
+            Exactly 2 vertex IDs forming the boundary of this edge.
+            Unordered (edges are unoriented).
+        uri : str, optional
+            Source file URI for this element.
+        **attributes : Any
+            Attribute values (e.g. status="passing").
+
+        Raises
+        ------
+        ValueError
+            If len(vertices) != 2.
+        ValidationError
+            If SHACL validation fails after assertion.
+        """
+        if len(vertices) != 2:
+            raise ValueError(f"add_edge requires exactly 2 vertices; got {len(vertices)}")
+        self._assert_element(id, type, boundary_ids=list(vertices), attributes=attributes, uri=uri)
+
+    def add_face(
+        self,
+        id: str,
+        type: str,
+        boundary: list[str],
+        uri: str | None = None,
+        **attributes: Any,
+    ) -> None:
+        """
+        Assert a face individual, link to boundary edges, and add to complex.
+
+        Asserts the face as an individual of the given type (subclass of
+        KC:Face), links it to exactly 3 boundary edges via kc:boundedBy,
+        then asserts kc:hasElement on the complex. Validates via SHACL including:
+        - FaceShape: exactly 3 boundary edges forming a closed triangle
+        - ComplexShape: boundary edges must already be members of the complex
+
+        Parameters
+        ----------
+        id : str
+            Local identifier for the face.
+        type : str
+            Face type name (must be a registered subclass of KC:Face).
+        boundary : list[str]
+            Exactly 3 edge IDs forming the boundary of this face.
+        uri : str, optional
+            Source file URI for this element.
+        **attributes : Any
+            Attribute values.
+
+        Raises
+        ------
+        ValueError
+            If len(boundary) != 3.
+        ValidationError
+            If SHACL validation fails after assertion.
+        """
+        if len(boundary) != 3:
+            raise ValueError(f"add_face requires exactly 3 boundary edges; got {len(boundary)}")
+        self._assert_element(id, type, boundary_ids=boundary, attributes=attributes, uri=uri)
+
+    def query(self, template_name: str, **kwargs: Any) -> pd.DataFrame:
+        """
+        Execute a named SPARQL template and return results as a DataFrame.
+
+        Parameters
+        ----------
+        template_name : str
+            Name of a registered query template (filename stem from
+            framework or model query directories).
+        **kwargs : Any
+            Substitution values for {placeholder} tokens in the template.
+
+        Returns
+        -------
+        pd.DataFrame
+            One row per SPARQL result binding.
+
+        Raises
+        ------
+        UnknownQueryError
+            If template_name is not registered.
+        """
+        if template_name not in self._query_templates:
+            raise UnknownQueryError(
+                f"No query template named '{template_name}'. "
+                f"Available: {sorted(self._query_templates)}"
+            )
+        sparql = self._query_templates[template_name]
+
+        # Provide namespace bindings for queries that may not declare all prefixes
+        init_ns = {
+            "kc": _KC,
+            "rdf": RDF,
+            "rdfs": RDFS,
+            "owl": OWL,
+            "xsd": XSD,
+            self._schema._namespace: self._ns,
+        }
+        results = self._instance_graph.query(sparql, initNs=init_ns)
+
+        columns = [str(v) for v in results.vars]
+        rows = []
+        for row in results:
+            rows.append([str(val) if val is not None else None for val in row])
+        return pd.DataFrame(rows, columns=columns)
+
+    def dump_graph(self) -> str:
+        """Return the instance graph as a Turtle string."""
+        return self._instance_graph.serialize(format="turtle")
+
+    def export(self, path: str | Path) -> Path:
+        """
+        Export the schema, queries, and instance graph to a directory.
+
+        Writes ontology.ttl, shapes.ttl, queries/*.sparql, and instance.ttl.
+
+        Parameters
+        ----------
+        path : str | Path
+            Target directory. Created if it does not exist.
+
+        Returns
+        -------
+        Path
+            The export directory.
+        """
+        p = Path(path)
+        self._schema.export(p, query_dirs=self._query_dirs_raw)
+        (p / "instance.ttl").write_text(self.dump_graph())
+        return p
+
+    @classmethod
+    def load(cls, path: str | Path) -> "KnowledgeComplex":
+        """
+        Load a knowledge complex from a directory.
+
+        Reads ontology.ttl and shapes.ttl to reconstruct the schema,
+        queries/*.sparql for query templates, and instance.ttl (if present)
+        for the instance graph.
+
+        Parameters
+        ----------
+        path : str | Path
+            Directory containing at minimum ontology.ttl and shapes.ttl.
+
+        Returns
+        -------
+        KnowledgeComplex
+        """
+        p = Path(path)
+        schema = SchemaBuilder.load(p)
+        query_dir = p / "queries"
+        query_dirs = [query_dir] if query_dir.exists() else []
+        kc = cls(schema=schema, query_dirs=query_dirs)
+        instance_file = p / "instance.ttl"
+        if instance_file.exists():
+            kc._instance_graph.parse(str(instance_file), format="turtle")
+        return kc

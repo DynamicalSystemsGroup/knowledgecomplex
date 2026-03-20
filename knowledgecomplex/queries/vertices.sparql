@@ -1,0 +1,13 @@
+# knowledgecomplex/queries/vertices.sparql
+# Return all vertex individuals and their types.
+
+PREFIX kc:   <https://example.org/kc#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?vertex ?type
+WHERE {
+    ?vertex a ?type .
+    ?type rdfs:subClassOf* kc:Vertex .
+}
+ORDER BY ?type ?vertex

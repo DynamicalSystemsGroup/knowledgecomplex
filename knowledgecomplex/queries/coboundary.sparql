@@ -1,0 +1,16 @@
+# knowledgecomplex/queries/coboundary.sparql
+# Coboundary (inverse boundary) operator.
+#
+# Given a simplex, find all higher-dimensional simplices whose boundary contains it.
+# This is NOT a stored property — it's a SPARQL query over the boundedBy relation.
+#
+#   Coboundary of a Vertex = Edges whose boundedBy includes that vertex
+#   Coboundary of an Edge  = Faces whose boundedBy includes that edge
+#
+# Usage: substitute {simplex} with the IRI of the element.
+
+PREFIX kc: <https://example.org/kc#>
+
+SELECT ?coboundary WHERE {
+    ?coboundary kc:boundedBy {simplex} .
+}

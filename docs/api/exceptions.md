@@ -1,0 +1,3 @@
+# Exceptions
+
+::: knowledgecomplex.exceptions

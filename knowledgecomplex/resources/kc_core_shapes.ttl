@@ -1,0 +1,191 @@
+# knowledgecomplex/resources/kc_core_shapes.ttl
+# Abstract SHACL shapes — KC topological constraints.
+# This file is a static resource; do not generate at runtime.
+#
+# This file covers the topological-SHACL cell of the 2x2 responsibility map.
+# It enforces instance-level constraints that OWL cardinality axioms cannot express:
+#
+#   1. Edge boundary vertices are distinct individuals.
+#      WHY NOT OWL: OWL operates under the open-world assumption. Two boundedBy
+#      triples pointing to different IRIs are not guaranteed to denote different
+#      individuals without an explicit owl:differentFrom assertion. SHACL operates
+#      on the graph as-is.
+#
+#   2. Closed-triangle constraint: the 3 boundary edges of a Face share vertices
+#      forming a cycle.
+#      WHY NOT OWL: This requires co-referencing across 3 separate boundedBy values —
+#      i.e. checking that the boundary edges' own boundary vertices form a specific
+#      topological pattern across multiple individuals. OWL-DL cannot express this.
+#      sh:sparql is the correct mechanism.
+#
+#   3. Boundary-closure of a Complex: if a simplex is in the complex, all its
+#      boundary elements must also be in the complex.
+#      WHY NOT OWL: This requires co-referencing across kc:hasElement and
+#      kc:boundedBy on different individuals. OWL cannot express "for every element
+#      in the complex, each of its boundary elements is also in the complex."
+#
+#   4. kc:uri is optional and at-most-one per element.
+#      WHY SHACL: OWL cardinality is inference-based; SHACL enforces this at
+#      the instance level without open-world complications.
+#
+# SIMPLIFICATION: All simplices are unoriented. boundedBy returns an unordered set.
+
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix kc:   <https://example.org/kc#> .
+@prefix kcs:  <https://example.org/kc/shape#> .
+
+# ---------------------------------------------------------------------------
+# ElementShape — superstructure constraint: kc:uri is optional, at-most-one
+# ---------------------------------------------------------------------------
+
+kcs:ElementShape
+    a sh:NodeShape ;
+    sh:targetClass kc:Element ;
+    rdfs:label "ElementShape" ;
+    rdfs:comment "Superstructure constraint: kc:uri may appear at most once per element." ;
+
+    sh:property [
+        sh:path kc:uri ;
+        sh:datatype xsd:anyURI ;
+        sh:maxCount 1 ;
+        sh:message "An element may have at most one kc:uri value."
+    ] .
+
+# ---------------------------------------------------------------------------
+# EdgeShape — topological-SHACL constraints on KC:Edge instances
+# ---------------------------------------------------------------------------
+
+kcs:EdgeShape
+    a sh:NodeShape ;
+    sh:targetClass kc:Edge ;
+    rdfs:label "EdgeShape" ;
+    rdfs:comment "Topological constraints on KC:Edge instances." ;
+
+    # boundedBy: exactly 2, each must be KC:Vertex
+    sh:property [
+        sh:path kc:boundedBy ;
+        sh:minCount 2 ;
+        sh:maxCount 2 ;
+        sh:class kc:Vertex ;
+        sh:message "Edge must have exactly two boundedBy relations of type KC:Vertex."
+    ] ;
+
+    # Distinctness constraint: the two boundary vertices must differ
+    # WHY SHACL NOT OWL: see file header note 1.
+    # NOTE: We use COUNT(DISTINCT) because SPARQL pattern matching on two
+    # boundedBy triples produces self-joins where both variables bind to the
+    # same value, even when two distinct vertices exist.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        rdfs:comment "Edge boundary vertices must be distinct individuals." ;
+        sh:message "Edge boundary vertices must not be the same vertex." ;
+        sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:boundedBy ?v .
+            }
+            GROUP BY $this
+            HAVING (COUNT(DISTINCT ?v) < 2)
+        """
+    ] .
+
+# ---------------------------------------------------------------------------
+# FaceShape — topological-SHACL constraints on KC:Face instances
+# ---------------------------------------------------------------------------
+
+kcs:FaceShape
+    a sh:NodeShape ;
+    sh:targetClass kc:Face ;
+    rdfs:label "FaceShape" ;
+    rdfs:comment "Topological constraints on KC:Face instances." ;
+
+    # boundedBy: exactly 3, each must be KC:Edge
+    sh:property [
+        sh:path kc:boundedBy ;
+        sh:minCount 3 ;
+        sh:maxCount 3 ;
+        sh:class kc:Edge ;
+        sh:message "Face must have exactly three boundedBy relations, each of type KC:Edge."
+    ] ;
+
+    # Closed-triangle constraint.
+    # WHY SHACL sh:sparql NOT OWL: see file header note 2.
+    # The query finds faces where the 3 boundary edges do NOT form a closed triangle.
+    # A closed triangle requires: for edges e1, e2, e3, each with 2 boundary vertices,
+    # the union of all 6 boundary vertex slots contains exactly 3 distinct vertices
+    # and each vertex appears in exactly 2 of the 3 edges.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        rdfs:comment """
+            Closed-triangle constraint: the 3 boundary edges of a Face must share
+            vertices forming a cycle (v1-v2, v2-v3, v3-v1). This cannot be expressed
+            in OWL because it requires co-referencing property values across 3 edge
+            individuals.
+        """ ;
+        sh:message "Face boundary edges do not form a closed triangle over shared vertices." ;
+        sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:boundedBy ?e1 ;
+                      kc:boundedBy ?e2 ;
+                      kc:boundedBy ?e3 .
+                FILTER (?e1 != ?e2 && ?e2 != ?e3 && ?e1 != ?e3)
+                ?e1 kc:boundedBy ?a1 ; kc:boundedBy ?b1 .
+                ?e2 kc:boundedBy ?a2 ; kc:boundedBy ?b2 .
+                ?e3 kc:boundedBy ?a3 ; kc:boundedBy ?b3 .
+                FILTER (?a1 != ?b1 && ?a2 != ?b2 && ?a3 != ?b3)
+                # For a valid triangle each endpoint of e1 must appear in at least
+                # one other edge's boundary.
+                BIND(
+                    EXISTS {
+                        { ?e2 kc:boundedBy ?a1 } UNION { ?e3 kc:boundedBy ?a1 }
+                    } AS ?a1_shared
+                )
+                BIND(
+                    EXISTS {
+                        { ?e2 kc:boundedBy ?b1 } UNION { ?e3 kc:boundedBy ?b1 }
+                    } AS ?b1_shared
+                )
+                FILTER NOT EXISTS {
+                    # Valid closed triangle: each endpoint of e1 is shared with another edge
+                    FILTER (?a1_shared && ?b1_shared)
+                }
+            }
+        """
+    ] .
+
+# ---------------------------------------------------------------------------
+# ComplexShape — boundary-closure constraint on KC:Complex instances
+# ---------------------------------------------------------------------------
+
+kcs:ComplexShape
+    a sh:NodeShape ;
+    sh:targetClass kc:Complex ;
+    rdfs:label "ComplexShape" ;
+    rdfs:comment """Boundary-closure constraint: if a simplex is in the complex,
+        all its boundary elements must also be in the complex.""" ;
+
+    # Boundary-closure: every element's boundary elements must also be members.
+    # WHY SHACL sh:sparql NOT OWL: see file header note 3.
+    # The query finds complexes where some element has a boundary element that
+    # is NOT also a member of the complex.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        rdfs:comment """Boundary-closure: for every element in the complex,
+            each of its boundedBy targets must also be a hasElement of the complex.""" ;
+        sh:message "Complex is not closed under the boundary operator: an element's boundary element is missing from the complex." ;
+        sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:hasElement ?elem .
+                ?elem kc:boundedBy ?boundary .
+                FILTER NOT EXISTS {
+                    $this kc:hasElement ?boundary .
+                }
+            }
+        """
+    ] .

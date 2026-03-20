@@ -1,0 +1,140 @@
+# knowledgecomplex/resources/kc_core.ttl
+# Abstract OWL ontology — KC topological backbone.
+# This file is a static resource; do not generate at runtime.
+#
+# DESIGN SEAMS (constraints OWL cannot express — see kc_core_shapes.ttl):
+#   - Edge boundary vertices must be distinct (open-world assumption; needs SHACL)
+#   - Closed-triangle constraint across 3 Face boundary edges (co-reference; needs sh:sparql)
+#   - Boundary-closure of a Complex (compositional validity; needs sh:sparql)
+#
+# SIMPLIFICATION (this implementation):
+#   All simplices are unoriented. The boundary operator (boundedBy) returns an
+#   unordered set, not an ordered list. For oriented simplex support see
+#   docs/issues/orientation-support.md.
+
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix kc:   <https://example.org/kc#> .
+
+<https://example.org/kc>
+    a owl:Ontology ;
+    rdfs:label "Knowledge Complex Core Ontology" ;
+    rdfs:comment "Abstract topological backbone: Element, Vertex, Edge, Face, Complex." .
+
+# ---------------------------------------------------------------------------
+# Base class for all topological elements (simplices)
+# ---------------------------------------------------------------------------
+
+kc:Element a owl:Class ;
+    rdfs:label "Element" ;
+    rdfs:comment """Abstract topological element (k-simplex). All KC types are elements.
+        The simplex order k determines boundary cardinality:
+          k=0 (Vertex): empty boundary (cardinality 0)
+          k=1 (Edge):   2 boundary vertices
+          k=2 (Face):   3 boundary edges
+          k>=1 general: (k+1) boundary (k-1)-simplices
+        Higher orders can be defined by subclassing Element.""" .
+
+# ---------------------------------------------------------------------------
+# Abstract simplex classes (subclasses of Element)
+# ---------------------------------------------------------------------------
+
+kc:Vertex a owl:Class ;
+    rdfs:subClassOf kc:Element ;
+    rdfs:label "Vertex" ;
+    rdfs:comment "Abstract 0-simplex. Empty boundary (∂v = ∅). Concrete types must subclass this." .
+
+kc:Edge a owl:Class ;
+    rdfs:subClassOf kc:Element ;
+    rdfs:label "Edge" ;
+    rdfs:comment "Abstract 1-simplex. Boundary: exactly 2 vertices. Concrete types must subclass this." .
+
+kc:Face a owl:Class ;
+    rdfs:subClassOf kc:Element ;
+    rdfs:label "Face" ;
+    rdfs:comment "Abstract 2-simplex. Boundary: exactly 3 edges. Concrete types must subclass this." .
+
+# Higher-order simplices (k>=3) can be defined by subclassing kc:Element
+# and adding a boundedBy cardinality restriction. For example:
+#   kc:Tetrahedron rdfs:subClassOf kc:Element .  # 3-simplex
+#   kc:Tetrahedron rdfs:subClassOf [
+#       a owl:Restriction ; owl:onProperty kc:boundedBy ;
+#       owl:qualifiedCardinality "4"^^xsd:nonNegativeInteger ;
+#       owl:onClass kc:Face ] .
+
+# ---------------------------------------------------------------------------
+# Boundary operator (dimension-polymorphic)
+# ---------------------------------------------------------------------------
+# boundedBy maps a k-simplex to its bounding (k-1)-simplices:
+#   Vertex: no boundedBy (k=0, empty boundary)
+#   Edge  boundedBy  Vertex  (cardinality 2)
+#   Face  boundedBy  Edge    (cardinality 3)
+# Coboundary (inverse lookup) is handled by SPARQL queries, not stored triples.
+
+kc:boundedBy a owl:ObjectProperty ;
+    rdfs:domain kc:Element ;
+    rdfs:range  kc:Element ;
+    rdfs:label "boundedBy" ;
+    rdfs:comment """Boundary operator (∂). Maps a k-simplex to its bounding
+        (k-1)-simplices. Cardinality is enforced per subclass via OWL restrictions.
+        Vertices (k=0) have empty boundary. For k>=1, cardinality = k+1.
+        All elements are unoriented (boundary is an unordered set).""" .
+
+# ---------------------------------------------------------------------------
+# Source file URI (optional, superstructure-level attribute)
+# ---------------------------------------------------------------------------
+# kc:uri allows any element to point to its source file (local or remote).
+# This is particularly useful for domain applications (e.g. AAA) where each
+# element corresponds to an actual document file.
+
+kc:uri a owl:DatatypeProperty ;
+    rdfs:domain kc:Element ;
+    rdfs:range  xsd:anyURI ;
+    rdfs:label "uri" ;
+    rdfs:comment """Optional URI pointing to the source file for this element.
+        Accepts any URI scheme (file:///, https://, etc.).
+        At-most-one per element (sh:maxCount 1 enforced in kc_core_shapes.ttl).""" .
+
+# ---------------------------------------------------------------------------
+# Cardinality restrictions (topological-OWL cell of the 2x2)
+# ---------------------------------------------------------------------------
+
+# Edge: exactly 2 boundary vertices
+# DESIGN SEAM: distinctness of the 2 vertices requires SHACL (see kc_core_shapes.ttl)
+
+kc:Edge rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty kc:boundedBy ;
+    owl:qualifiedCardinality "2"^^xsd:nonNegativeInteger ;
+    owl:onClass kc:Vertex
+] .
+
+# Face: exactly 3 boundary edges
+# DESIGN SEAM: closed-triangle constraint (boundary edges share vertices in a cycle)
+# cannot be expressed in OWL. See sh:sparql in kc_core_shapes.ttl.
+
+kc:Face rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty kc:boundedBy ;
+    owl:qualifiedCardinality "3"^^xsd:nonNegativeInteger ;
+    owl:onClass kc:Edge
+] .
+
+# ---------------------------------------------------------------------------
+# Complex — a collection of elements (simplices)
+# ---------------------------------------------------------------------------
+
+kc:Complex a owl:Class ;
+    rdfs:label "Complex" ;
+    rdfs:comment """A simplicial complex: a collection of elements (simplices) that is
+        closed under the boundary operator. If a simplex is in the complex, all its
+        boundary elements must also be in the complex. Topological validity of the
+        composition is enforced by SHACL (see kcs:ComplexShape).""" .
+
+kc:hasElement a owl:ObjectProperty ;
+    rdfs:domain kc:Complex ;
+    rdfs:range  kc:Element ;
+    rdfs:label "hasElement" ;
+    rdfs:comment "Membership relation: an element belongs to this complex." .
