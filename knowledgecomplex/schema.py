@@ -19,7 +19,7 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 # rdflib is an internal implementation detail.
 # Do not re-export any rdflib types through the public API.
@@ -34,6 +34,44 @@ _CORE_SHAPES = _RESOURCES / "kc_core_shapes.ttl"
 _KC = Namespace("https://example.org/kc#")
 _KCS = Namespace("https://example.org/kc/shape#")
 _SH = Namespace("http://www.w3.org/ns/shacl#")
+
+
+@runtime_checkable
+class Codec(Protocol):
+    """
+    Bidirectional bridge between element records and artifacts at URIs.
+
+    A codec pairs compile (map → territory) and decompile (territory → map)
+    for a given element type. Registered on KnowledgeComplex instances via
+    register_codec(), and inherited by child types.
+    """
+
+    def compile(self, element: dict) -> None:
+        """
+        Write an element record to the artifact at its URI.
+
+        Parameters
+        ----------
+        element : dict
+            Keys: id, type, uri, plus all attribute key-value pairs.
+        """
+        ...
+
+    def decompile(self, uri: str) -> dict:
+        """
+        Read the artifact at a URI and return an attribute dict.
+
+        Parameters
+        ----------
+        uri : str
+            The URI of the artifact to read.
+
+        Returns
+        -------
+        dict
+            Attribute key-value pairs suitable for add_vertex/add_edge/add_face kwargs.
+        """
+        ...
 
 
 @dataclass(frozen=True)

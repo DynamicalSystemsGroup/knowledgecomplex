@@ -36,8 +36,8 @@ import pandas as pd
 import pyshacl
 from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS, OWL, XSD
 
-from knowledgecomplex.exceptions import ValidationError, UnknownQueryError
-from knowledgecomplex.schema import SchemaBuilder
+from knowledgecomplex.exceptions import ValidationError, UnknownQueryError, SchemaError
+from knowledgecomplex.schema import SchemaBuilder, Codec
 
 _FRAMEWORK_QUERIES_DIR = Path(__file__).parent / "queries"
 
@@ -60,6 +60,88 @@ def _load_query_templates(
         for path in d.glob("*.sparql"):
             templates[path.stem] = path.read_text()
     return templates
+
+
+class Element:
+    """
+    Lightweight proxy for an element in a KnowledgeComplex.
+
+    Provides read-only access to element properties and compile/decompile
+    methods that delegate to the codec registered for this element's type.
+    Properties read live from the instance graph on each access.
+    """
+
+    def __init__(self, kc: "KnowledgeComplex", id: str) -> None:
+        self._kc = kc
+        self._id = id
+        self._iri = URIRef(f"{kc._schema._base_iri}{id}")
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def type(self) -> str:
+        ns_str = self._kc._schema._base_iri
+        for _, _, o in self._kc._instance_graph.triples((self._iri, RDF.type, None)):
+            type_str = str(o)
+            if type_str.startswith(ns_str):
+                return type_str[len(ns_str):]
+        raise ValueError(f"Element '{self._id}' has no user type")
+
+    @property
+    def uri(self) -> str | None:
+        obj = self._kc._instance_graph.value(self._iri, _KC.uri)
+        return str(obj) if obj is not None else None
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        ns_str = self._kc._schema._base_iri
+        attrs: dict[str, Any] = {}
+        for _, p, o in self._kc._instance_graph.triples((self._iri, None, None)):
+            p_str = str(p)
+            if p_str.startswith(ns_str):
+                attr_name = p_str[len(ns_str):]
+                attrs[attr_name] = str(o)
+        return attrs
+
+    def compile(self) -> None:
+        """Write this element's record to the artifact at its URI."""
+        codec = self._kc._resolve_codec(self.type)
+        uri = self.uri
+        if uri is None:
+            raise ValueError(f"Element '{self._id}' has no kc:uri — cannot compile")
+        element_dict = {"id": self._id, "type": self.type, "uri": uri, **self.attrs}
+        codec.compile(element_dict)
+
+    def decompile(self) -> None:
+        """Read the artifact at this element's URI and update attributes."""
+        codec = self._kc._resolve_codec(self.type)
+        uri = self.uri
+        if uri is None:
+            raise ValueError(f"Element '{self._id}' has no kc:uri — cannot decompile")
+        new_attrs = codec.decompile(uri)
+
+        # Remove existing model-namespace attribute triples
+        ns_str = self._kc._schema._base_iri
+        to_remove = []
+        for s, p, o in self._kc._instance_graph.triples((self._iri, None, None)):
+            if str(p).startswith(ns_str):
+                to_remove.append((s, p, o))
+        for triple in to_remove:
+            self._kc._instance_graph.remove(triple)
+
+        # Add new attribute triples
+        for attr_name, attr_value in new_attrs.items():
+            attr_iri = self._kc._ns[attr_name]
+            if isinstance(attr_value, (list, tuple)):
+                for v in attr_value:
+                    self._kc._instance_graph.add((self._iri, attr_iri, Literal(v)))
+            else:
+                self._kc._instance_graph.add((self._iri, attr_iri, Literal(attr_value)))
+
+        # Re-validate
+        self._kc._validate(self._id)
 
 
 class KnowledgeComplex:
@@ -107,6 +189,7 @@ class KnowledgeComplex:
         self._instance_graph: Any = None  # rdflib.Graph, populated in _init_graph()
         self._complex_iri: Any = None     # URIRef for the kc:Complex individual
         self._ns = schema._ns
+        self._codecs: dict[str, Codec] = {}
         self._init_graph()
 
     def _init_graph(self) -> None:
@@ -445,3 +528,141 @@ class KnowledgeComplex:
         if instance_file.exists():
             kc._instance_graph.parse(str(instance_file), format="turtle")
         return kc
+
+    # --- Element handles and listing ---
+
+    def element(self, id: str) -> Element:
+        """
+        Get an Element handle for the given element ID.
+
+        Parameters
+        ----------
+        id : str
+            Local identifier of the element.
+
+        Returns
+        -------
+        Element
+
+        Raises
+        ------
+        ValueError
+            If no element with that ID exists in the graph.
+        """
+        iri = URIRef(f"{self._schema._base_iri}{id}")
+        if (iri, RDF.type, None) not in self._instance_graph:
+            raise ValueError(f"No element with id '{id}' in the complex")
+        return Element(self, id)
+
+    def element_ids(self, type: str | None = None) -> list[str]:
+        """
+        List element IDs, optionally filtered by type (includes subtypes).
+
+        Parameters
+        ----------
+        type : str, optional
+            Filter to elements of this type or any subtype.
+
+        Returns
+        -------
+        list[str]
+        """
+        ns_str = self._schema._base_iri
+        if type is not None:
+            if type not in self._schema._types:
+                raise SchemaError(f"Type '{type}' is not registered")
+            type_iri = self._ns[type]
+            # Use SPARQL with subClassOf* to include subtypes
+            sparql = f"""
+            SELECT ?elem WHERE {{
+                ?elem a/rdfs:subClassOf* <{type_iri}> .
+                <{self._complex_iri}> <https://example.org/kc#hasElement> ?elem .
+            }}
+            """
+            results = self._instance_graph.query(
+                sparql, initNs={"rdfs": RDFS, "rdf": RDF}
+            )
+            ids = []
+            for row in results:
+                elem_str = str(row[0])
+                if elem_str.startswith(ns_str):
+                    ids.append(elem_str[len(ns_str):])
+            return sorted(ids)
+        else:
+            # All elements in the complex
+            ids = []
+            for _, _, o in self._instance_graph.triples(
+                (self._complex_iri, _KC.hasElement, None)
+            ):
+                elem_str = str(o)
+                if elem_str.startswith(ns_str):
+                    ids.append(elem_str[len(ns_str):])
+            return sorted(ids)
+
+    def elements(self, type: str | None = None) -> list[Element]:
+        """
+        List Element handles, optionally filtered by type (includes subtypes).
+
+        Parameters
+        ----------
+        type : str, optional
+            Filter to elements of this type or any subtype.
+
+        Returns
+        -------
+        list[Element]
+        """
+        return [Element(self, id) for id in self.element_ids(type=type)]
+
+    # --- Codec registration and resolution ---
+
+    def register_codec(self, type_name: str, codec: Codec) -> None:
+        """
+        Register a codec for the given type.
+
+        Parameters
+        ----------
+        type_name : str
+            Must be a registered type in the schema.
+        codec : Codec
+            Object implementing compile() and decompile().
+        """
+        if type_name not in self._schema._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+        if not isinstance(codec, Codec):
+            raise TypeError(
+                f"Expected a Codec instance, got {type(codec).__name__}"
+            )
+        self._codecs[type_name] = codec
+
+    def _resolve_codec(self, type_name: str) -> Codec:
+        """Walk type hierarchy to find the nearest registered codec."""
+        current: str | None = type_name
+        while current is not None:
+            if current in self._codecs:
+                return self._codecs[current]
+            current = self._schema._types.get(current, {}).get("parent")
+        raise SchemaError(
+            f"No codec registered for type '{type_name}' or any of its ancestors"
+        )
+
+    def decompile_uri(self, type_name: str, uri: str) -> dict:
+        """
+        Decompile an artifact at a URI without adding it to the graph.
+
+        Parameters
+        ----------
+        type_name : str
+            The element type (used to resolve the codec).
+        uri : str
+            URI of the artifact to read.
+
+        Returns
+        -------
+        dict
+            Attribute key-value pairs.
+        """
+        if type_name not in self._schema._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+        codec = self._resolve_codec(type_name)
+        return codec.decompile(uri)

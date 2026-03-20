@@ -2,8 +2,8 @@
 # Internal dependencies: rdflib, pyshacl, owlrl
 # These are never re-exported. The public API is schema.py and graph.py only.
 
-from knowledgecomplex.schema import SchemaBuilder, vocab, text, TextDescriptor
-from knowledgecomplex.graph import KnowledgeComplex
+from knowledgecomplex.schema import SchemaBuilder, vocab, text, TextDescriptor, Codec
+from knowledgecomplex.graph import KnowledgeComplex, Element
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
 
@@ -12,7 +12,9 @@ __all__ = [
     "vocab",
     "text",
     "TextDescriptor",
+    "Codec",
     "KnowledgeComplex",
+    "Element",
     "ValidationError",
     "SchemaError",
     "UnknownQueryError",
