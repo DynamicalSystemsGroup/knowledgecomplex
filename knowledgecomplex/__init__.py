@@ -6,6 +6,7 @@ from knowledgecomplex.schema import SchemaBuilder, vocab, text, TextDescriptor, 
 from knowledgecomplex.graph import KnowledgeComplex, Element
 from knowledgecomplex.filtration import Filtration
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
+from knowledgecomplex.audit import AuditReport, AuditViolation, audit_file
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
 from knowledgecomplex.clique import find_cliques, infer_faces, fill_cliques
 from knowledgecomplex.diff import ComplexDiff, ComplexSequence
@@ -70,6 +71,8 @@ __all__ = [
     "ComplexDiff", "ComplexSequence",
     # Codecs
     "MarkdownCodec", "verify_documents",
+    # Audit
+    "AuditReport", "AuditViolation", "audit_file",
 ]
 
 if _HAS_ANALYSIS:

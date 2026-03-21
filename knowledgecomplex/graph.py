@@ -30,7 +30,10 @@ to an actual document file (e.g. file:///path/to/doc.md).
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from knowledgecomplex.audit import AuditReport
 
 import pandas as pd
 import pyshacl
@@ -60,6 +63,23 @@ def _load_query_templates(
         for path in d.glob("*.sparql"):
             templates[path.stem] = path.read_text()
     return templates
+
+
+class _DeferredVerification:
+    """Context manager that suppresses per-write SHACL, verifies on exit."""
+
+    def __init__(self, kc: "KnowledgeComplex") -> None:
+        self._kc = kc
+
+    def __enter__(self) -> "KnowledgeComplex":
+        self._kc._defer_verification = True
+        return self._kc
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self._kc._defer_verification = False
+        if exc_type is None:
+            self._kc.verify()
+        return None
 
 
 class Element:
@@ -190,6 +210,7 @@ class KnowledgeComplex:
         self._complex_iri: Any = None     # URIRef for the kc:Complex individual
         self._ns = schema._ns
         self._codecs: dict[str, Codec] = {}
+        self._defer_verification = False
         self._init_graph()
 
     def _init_graph(self) -> None:
@@ -227,20 +248,22 @@ class KnowledgeComplex:
         """
         Run pyshacl against the current instance graph.
 
-        Validates both element-level shapes (EdgeShape, FaceShape) and
-        complex-level shapes (ComplexShape boundary-closure).
+        Skipped when deferred_verification() context manager is active.
 
         Parameters
         ----------
         focus_node_id : str, optional
             If provided, used in the error message to identify which element
-            triggered the failure. Validation always covers the entire graph.
+            triggered the failure.
 
         Raises
         ------
         ValidationError
-            If validation fails. report attribute contains human-readable text.
+            If verification fails. report attribute contains human-readable text.
         """
+        if self._defer_verification:
+            return
+
         conforms, _, results_text = pyshacl.validate(
             data_graph=self._instance_graph,
             shacl_graph=self._shacl_graph,
@@ -253,6 +276,71 @@ class KnowledgeComplex:
             if focus_node_id:
                 msg += f" (after adding '{focus_node_id}')"
             raise ValidationError(msg, report=results_text)
+
+    def verify(self) -> None:
+        """
+        Run SHACL verification on the current instance graph.
+
+        Checks all topological and ontological constraints. Raises on failure.
+        Use :meth:`audit` for a non-throwing alternative.
+
+        Raises
+        ------
+        ValidationError
+            If any SHACL constraint is violated.
+        """
+        # Bypass the deferral flag — verify() is an explicit user request
+        conforms, _, results_text = pyshacl.validate(
+            data_graph=self._instance_graph,
+            shacl_graph=self._shacl_graph,
+            ont_graph=self._ont_graph,
+            inference="rdfs",
+            abort_on_first=False,
+        )
+        if not conforms:
+            raise ValidationError("SHACL verification failed", report=results_text)
+
+    def audit(self) -> "AuditReport":
+        """
+        Run SHACL verification and return a structured report.
+
+        Unlike :meth:`verify`, this never raises — it returns an
+        :class:`~knowledgecomplex.audit.AuditReport` with ``conforms``,
+        ``violations``, and ``text`` fields.
+
+        Returns
+        -------
+        AuditReport
+        """
+        from knowledgecomplex.audit import _build_report
+        conforms, _, results_text = pyshacl.validate(
+            data_graph=self._instance_graph,
+            shacl_graph=self._shacl_graph,
+            ont_graph=self._ont_graph,
+            inference="rdfs",
+            abort_on_first=False,
+        )
+        return _build_report(conforms, results_text, self._schema._namespace)
+
+    def deferred_verification(self) -> "_DeferredVerification":
+        """
+        Context manager that suppresses per-write SHACL verification.
+
+        Inside the context, ``add_vertex``, ``add_edge``, and ``add_face``
+        skip SHACL checks. On exit, a single verification pass runs over
+        the entire graph. If verification fails, ``ValidationError`` is raised.
+
+        This is much faster for bulk construction — one SHACL pass instead
+        of one per element.
+
+        Example
+        -------
+        >>> with kc.deferred_verification():
+        ...     kc.add_vertex("v1", type="Node")
+        ...     kc.add_vertex("v2", type="Node")
+        ...     kc.add_edge("e1", type="Link", vertices={"v1", "v2"})
+        """
+        return _DeferredVerification(self)
 
     def _assert_element(
         self,

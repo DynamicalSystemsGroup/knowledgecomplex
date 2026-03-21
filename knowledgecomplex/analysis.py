@@ -387,7 +387,6 @@ def hodge_laplacian(
         return ((L + L.T) / 2).tocsr()
     else:
         # D₀: diagonal vertex degrees
-        nv = bm.B1.shape[0]
         vertex_degrees = np.array(np.abs(bm.B1).sum(axis=1)).flatten()
         vertex_degrees[vertex_degrees == 0] = 1.0
         D0_inv = sp.diags(1.0 / vertex_degrees, format="csr")
@@ -681,7 +680,6 @@ def graph_laplacian(kc: "KnowledgeComplex") -> sp.csr_matrix:
     """
     bm = boundary_matrices(kc)
     nv = len(bm.vertex_index)
-    ne = len(bm.edge_index)
 
     if nv == 0:
         return sp.csr_matrix((0, 0), dtype=np.float64)
@@ -871,7 +869,6 @@ def heat_kernel_pagerank(
 
     result = np.zeros(nv)
     current = chi.copy()  # χ_u W^0 = χ_u
-    coeff = np.exp(-t)
     factorial = 1.0
 
     for k in range(num_terms):

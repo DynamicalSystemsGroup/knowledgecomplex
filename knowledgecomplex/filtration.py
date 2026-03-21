@@ -9,7 +9,7 @@ temporal evolution, thematic layers, trust levels, or any ordering.
 
 from __future__ import annotations
 from collections import defaultdict
-from typing import Any, Callable, Iterator, TYPE_CHECKING
+from typing import Callable, Iterator, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from knowledgecomplex.graph import KnowledgeComplex
