@@ -7,6 +7,7 @@ from knowledgecomplex.graph import KnowledgeComplex, Element
 from knowledgecomplex.filtration import Filtration
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
+from knowledgecomplex.viz import to_networkx, type_color_map, plot_complex, plot_star, plot_skeleton
 
 __all__ = [
     "SchemaBuilder",
@@ -23,4 +24,9 @@ __all__ = [
     "save_graph",
     "load_graph",
     "dump_graph",
+    "to_networkx",
+    "type_color_map",
+    "plot_complex",
+    "plot_star",
+    "plot_skeleton",
 ]

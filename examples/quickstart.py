@@ -7,7 +7,7 @@ Models a data pipeline as a typed simplicial complex:
   - 2 faces: an operation triangle and a production triangle
 
 Run:
-    pip install knowledgecomplex
+    pip install knowledgecomplex[viz]
     python examples/quickstart.py
 """
 
@@ -64,3 +64,19 @@ print()
 # 5. Inspect the RDF
 print("=== Turtle dump ===")
 print(kc.dump_graph())
+
+# 6. Visualize
+from knowledgecomplex import to_networkx, plot_complex, plot_star
+import matplotlib.pyplot as plt
+
+# Full complex — each type gets a distinct color, vertices are largest
+fig, ax = plot_complex(kc, figsize=(12, 9))
+fig.savefig("examples/complex.png", dpi=150, bbox_inches="tight")
+print("Saved examples/complex.png")
+
+# Star of alice — her neighborhood highlighted, rest dimmed
+fig, ax = plot_star(kc, "alice", figsize=(12, 9))
+fig.savefig("examples/star_alice.png", dpi=150, bbox_inches="tight")
+print("Saved examples/star_alice.png")
+
+plt.show()
