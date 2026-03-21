@@ -254,7 +254,36 @@ filt[1]                 # set of element IDs at step 1
 filt2 = Filtration.from_function(kc, lambda eid: some_score(eid))
 ```
 
-## 7. Clique inference
+## 7. Parametric sequences
+
+A `ParametricSequence` views a single complex through a parameterized filter. The complex holds all elements across all parameter values; the filter selects which are "active" at each value. Unlike a Filtration, subcomplexes can shrink — elements can appear and disappear.
+
+```python
+from knowledgecomplex import ParametricSequence
+
+# Complex has people with active_from/active_until attributes
+seq = ParametricSequence(
+    kc,
+    values=["Q1", "Q2", "Q3", "Q4"],
+    filter=lambda elem, t: elem.attrs.get("active_from", "0") <= t < elem.attrs.get("active_until", "9999"),
+)
+
+seq["Q2"]                   # set of element IDs active at Q2
+seq.birth("carol")          # "Q2" — first value where carol appears
+seq.death("bob")            # "Q3" — first value where bob disappears
+seq.active_at("bob")        # ["Q1", "Q2"]
+seq.new_at(1)               # elements appearing at Q2
+seq.removed_at(2)           # elements disappearing at Q3 (bob left)
+seq.is_monotone             # False — people can leave
+seq.subcomplex_at(0)        # is the Q1 slice boundary-closed?
+
+for value, ids in seq:
+    print(f"{value}: {len(ids)} elements")
+```
+
+The complex is the territory; the parameterized filter is the map.
+
+## 8. Clique inference
 
 Discover higher-order structure hiding in the edge graph:
 
@@ -271,7 +300,7 @@ added = infer_faces(kc, "coverage")
 preview = infer_faces(kc, "coverage", dry_run=True)
 ```
 
-## 8. Export and load
+## 9. Export and load
 
 ```python
 # Export schema + instance to a directory
@@ -292,7 +321,7 @@ save_graph(kc, "data.jsonld", format="json-ld")
 load_graph(kc, "data.ttl")   # additive loading
 ```
 
-## 9. Verification and audit
+## 10. Verification and audit
 
 ```python
 # Throwing verification
@@ -317,7 +346,7 @@ report = audit_file("data/instance.ttl", shapes="data/shapes.ttl",
                     ontology="data/ontology.ttl")
 ```
 
-## 10. Pre-built ontologies
+## 11. Pre-built ontologies
 
 Three ontologies ship with the package:
 

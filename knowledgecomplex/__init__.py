@@ -11,6 +11,7 @@ except PackageNotFoundError:
 from knowledgecomplex.schema import SchemaBuilder, vocab, text, TextDescriptor, Codec
 from knowledgecomplex.graph import KnowledgeComplex, Element
 from knowledgecomplex.filtration import Filtration
+from knowledgecomplex.parametric import ParametricSequence
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
 from knowledgecomplex.audit import AuditReport, AuditViolation, audit_file
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
@@ -60,6 +61,7 @@ __all__ = [
     "KnowledgeComplex", "Element",
     # Filtrations
     "Filtration",
+    "ParametricSequence",
     # Exceptions
     "ValidationError", "SchemaError", "UnknownQueryError",
     # File I/O

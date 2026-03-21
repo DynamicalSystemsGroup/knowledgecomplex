@@ -1,0 +1,3 @@
+# Parametric Sequences
+
+::: knowledgecomplex.parametric
