@@ -9,6 +9,26 @@ from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQue
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
 from knowledgecomplex.viz import to_networkx, type_color_map, plot_complex, plot_star, plot_skeleton
 
+try:
+    from knowledgecomplex.analysis import (
+        boundary_matrices,
+        betti_numbers,
+        euler_characteristic,
+        hodge_laplacian,
+        edge_pagerank,
+        edge_pagerank_all,
+        hodge_decomposition,
+        edge_influence,
+        hodge_analysis,
+        BoundaryMatrices,
+        HodgeDecomposition,
+        EdgeInfluence,
+        HodgeAnalysisResults,
+    )
+    _HAS_ANALYSIS = True
+except ImportError:
+    _HAS_ANALYSIS = False
+
 __all__ = [
     "SchemaBuilder",
     "vocab",
@@ -30,3 +50,20 @@ __all__ = [
     "plot_star",
     "plot_skeleton",
 ]
+
+if _HAS_ANALYSIS:
+    __all__ += [
+        "boundary_matrices",
+        "betti_numbers",
+        "euler_characteristic",
+        "hodge_laplacian",
+        "edge_pagerank",
+        "edge_pagerank_all",
+        "hodge_decomposition",
+        "edge_influence",
+        "hodge_analysis",
+        "BoundaryMatrices",
+        "HodgeDecomposition",
+        "EdgeInfluence",
+        "HodgeAnalysisResults",
+    ]
