@@ -60,15 +60,46 @@ print()
 
 # ── 4. Declare a face type and fill in faces ─────────────────────────────
 
-# The triangles represent higher-order relationships we want to name.
-# Let's call them "operation" faces — they capture the full actor-activity-resource triad.
+# The two triangles have distinct semantics:
+#   operation:  actor + activity + input resource  (requires/accesses)
+#   production: actor + activity + output resource (produces/responsible)
 kc._schema.add_face_type("operation")
+kc._schema.add_face_type("production")
 
-# infer_faces finds all triangles and adds them as faces automatically
-added = infer_faces(kc, "operation")
+# After extending the schema, refresh the internal graphs so the new types
+# are visible to SPARQL queries and SHACL validation.
+kc._ont_graph.parse(data=kc._schema.dump_owl(), format="turtle")
+kc._instance_graph.parse(data=kc._schema.dump_owl(), format="turtle")
+kc._shacl_graph.parse(data=kc._schema.dump_shacl(), format="turtle")
+
+# Inspect the triangles to decide which type each gets.
+# The input triangle uses "requires" + "accesses" edges → operation
+# The output triangle uses "produces" + "responsible" edges → production
+for tri in triangles:
+    # Find the 3 edges forming this triangle
+    edges = {}
+    for eid in sorted(kc.element_ids()):
+        elem = kc.element(eid)
+        kind = kc._schema._types.get(elem.type, {}).get("kind")
+        if kind == "edge" and kc.boundary(eid) <= tri:
+            edges[eid] = elem.type
+
+    edge_types = set(edges.values())
+    boundary = sorted(edges.keys())
+
+    if "requires" in edge_types or "accesses" in edge_types:
+        face_type = "operation"
+    else:
+        face_type = "production"
+
+    face_id = f"{face_type}-{'_'.join(sorted(tri))}"
+    kc.add_face(face_id, type=face_type, boundary=boundary)
+    print(f"  Added {face_id} ({face_type}): {boundary}")
+
+print()
+added = [eid for eid in kc.element_ids()
+         if kc._schema._types.get(kc.element(eid).type, {}).get("kind") == "face"]
 print(f"=== Added {len(added)} faces ===")
-for fid in added:
-    print(f"  {fid}: boundary = {sorted(kc.boundary(fid))}")
 print()
 
 # ── 5. Topology after faces ──────────────────────────────────────────────
