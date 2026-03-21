@@ -8,7 +8,7 @@ analysis and understanding which structures are foundational vs. late-stage.
 
 Run:
     pip install knowledgecomplex[analysis]
-    python examples/filtration_evolution.py
+    python examples/07_filtration/filtration_evolution.py
 """
 
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, Filtration, vocab

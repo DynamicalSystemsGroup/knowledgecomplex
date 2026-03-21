@@ -1,17 +1,17 @@
-"""
-codec_markdown.py — Reusable MarkdownCodec for YAML-frontmatter + markdown files.
+"""knowledgecomplex.codecs.markdown — YAML-frontmatter + markdown codec.
 
-Implements the Codec protocol for knowledge complexes where each element
-is a markdown file with YAML frontmatter (metadata) and a markdown body
-with predefined section headers (content).
+Implements the :class:`~knowledgecomplex.schema.Codec` protocol for
+knowledge complexes where each element is a markdown file with YAML
+frontmatter (structured metadata) and a markdown body with predefined
+section headers (prose content).
 
 This follows the pattern used in production knowledge complexes authored
-in Obsidian — each element is a .md file, the YAML header holds structured
-attributes, and ## sections hold prose content.
+in Obsidian — each element is a ``.md`` file, the YAML header holds
+structured attributes, and ``##`` sections hold prose content.
 
 Usage::
 
-    from codec_markdown import MarkdownCodec, verify_documents
+    from knowledgecomplex.codecs import MarkdownCodec
 
     codec = MarkdownCodec(
         frontmatter_attrs=["name", "author", "abstract"],
@@ -19,25 +19,29 @@ Usage::
     )
     kc.register_codec("Paper", codec)
 
-    # Compile: KC element → markdown file
+    # Compile: KC element -> markdown file at its URI
     kc.element("paper-1").compile()
 
-    # Decompile: markdown file → KC element attributes
+    # Decompile: markdown file -> KC element attributes
     kc.element("paper-1").decompile()
 """
 from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
+
+if TYPE_CHECKING:
+    from knowledgecomplex.graph import KnowledgeComplex
 
 
 class MarkdownCodec:
     """Codec for YAML-frontmatter + markdown files.
 
-    Attributes are stored in two places in each markdown file:
+    Each element maps to a single ``.md`` file. Attributes are stored in
+    two places:
 
     - **YAML frontmatter** (between ``---`` delimiters): structured metadata
       fields like ``name``, ``author``, ``description``. These map 1:1 to
@@ -153,15 +157,16 @@ class MarkdownCodec:
 
 
 def verify_documents(
-    kc: Any,
+    kc: "KnowledgeComplex",
     directory: str | Path,
 ) -> list[str]:
     """Check consistency between KC elements and markdown files on disk.
 
     Verifies:
-    - Every element with a URI has a corresponding file
-    - Every ``.md`` file in the directory has a corresponding element
-    - Attribute values in files match the KC (via decompile)
+
+    - Every element with a URI has a corresponding file.
+    - Every ``.md`` file in the directory has a corresponding element.
+    - Attribute values in files match the KC (via decompile).
 
     Parameters
     ----------

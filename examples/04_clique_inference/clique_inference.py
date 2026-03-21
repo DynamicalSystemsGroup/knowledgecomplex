@@ -9,7 +9,7 @@ Demonstrates the explore → inspect → type workflow:
 
 Run:
     pip install knowledgecomplex[viz]
-    python examples/clique_inference.py
+    python examples/04_clique_inference/clique_inference.py
 """
 
 from knowledgecomplex import (
@@ -102,14 +102,17 @@ fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
 plot_hasse(kc, ax=ax1)
 ax1.set_title("Hasse Diagram (after inference)")
 
-# We need a separate figure for 3D
+from pathlib import Path
+out = Path(__file__).parent / "output"
+out.mkdir(exist_ok=True)
+
 plt.tight_layout()
-fig.savefig("examples/clique_hasse.png", dpi=150, bbox_inches="tight")
-print("Saved examples/clique_hasse.png")
+fig.savefig(out / "hasse.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'hasse.png'}")
 plt.close(fig)
 
 # Geometric realization — vertices as 3D points, edges as lines, faces as triangles
 fig, ax = plot_geometric(kc, figsize=(10, 8))
-fig.savefig("examples/clique_geometric.png", dpi=150, bbox_inches="tight")
-print("Saved examples/clique_geometric.png")
+fig.savefig(out / "geometric.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'geometric.png'}")
 plt.close(fig)

@@ -7,7 +7,7 @@ Models a small research collaboration network as a double-triangle complex:
   - 2 papers (faces): each authored by a triangle of collaborators
 
 Run:
-    python examples/topology_walkthrough.py
+    python examples/03_topology/topology_walkthrough.py
 """
 
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab

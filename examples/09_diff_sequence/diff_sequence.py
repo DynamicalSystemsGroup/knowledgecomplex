@@ -8,7 +8,7 @@ strings for interoperability with RDF-native systems like flexo MMS,
 or imported from remote SPARQL updates.
 
 Run:
-    python examples/diff_sequence.py
+    python examples/09_diff_sequence/diff_sequence.py
 """
 
 from knowledgecomplex import (

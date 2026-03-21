@@ -10,7 +10,7 @@ This is NOT a filtration (subcomplexes can shrink when people leave).
 It demonstrates query_ids() with parameter substitution.
 
 Run:
-    python examples/temporal_sweep.py
+    python examples/08_temporal_sweep/temporal_sweep.py
 """
 
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text

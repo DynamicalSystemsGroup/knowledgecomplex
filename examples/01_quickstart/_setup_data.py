@@ -1,9 +1,9 @@
 """
 Generate the pre-built pipeline data for the quickstart example.
 
-Run once:  python examples/_setup_data.py
+Run once:  python examples/01_quickstart/_setup_data.py
 
-Creates examples/data/pipeline/ with ontology.ttl, shapes.ttl, instance.ttl
+Creates examples/01_quickstart/data/pipeline/ with ontology.ttl, shapes.ttl, instance.ttl
 (a data pipeline with actors, activities, resources, and edges — but no faces).
 """
 
@@ -34,6 +34,8 @@ kc.add_edge("e4", type="accesses",   vertices={"alice", "dataset1"},   mode="rea
 kc.add_edge("e5", type="responsible", vertices={"alice", "dataset2"},  level="owner")
 
 # Export
-kc.export("examples/data/pipeline")
-print("Exported to examples/data/pipeline/")
+from pathlib import Path
+out = Path(__file__).parent / "data" / "pipeline"
+kc.export(out)
+print(f"Exported to {out}/")
 print(f"  {len(kc.element_ids())} elements (4 vertices + 5 edges, no faces)")

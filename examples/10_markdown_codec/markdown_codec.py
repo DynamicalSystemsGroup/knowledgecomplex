@@ -21,18 +21,14 @@ Demonstrates:
   6. Verify KC ↔ filesystem consistency
 
 Run:
-    python examples/markdown_codec.py
+    python examples/10_markdown_codec/markdown_codec.py
 """
 
-import sys
 import tempfile
 from pathlib import Path
 
-# Add examples/ to path so we can import the codec
-sys.path.insert(0, str(Path(__file__).parent))
-
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, text, vocab
-from codec_markdown import MarkdownCodec, verify_documents
+from knowledgecomplex.codecs import MarkdownCodec, verify_documents
 
 # ── Schema ──────────────────────────────────────────────────────────────────
 

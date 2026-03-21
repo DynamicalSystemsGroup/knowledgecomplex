@@ -8,7 +8,7 @@ Demonstrates:
   - String serialization with dump_graph()
 
 Run:
-    python examples/io_roundtrip.py
+    python examples/06_io_roundtrip/io_roundtrip.py
 """
 
 import tempfile

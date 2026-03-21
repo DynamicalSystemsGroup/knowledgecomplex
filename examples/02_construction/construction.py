@@ -8,7 +8,7 @@ Models a data pipeline as a typed simplicial complex:
 
 Run:
     pip install knowledgecomplex[viz,analysis]
-    python examples/quickstart.py
+    python examples/02_construction/construction.py
 """
 
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text
@@ -100,20 +100,24 @@ verify_networkx(G)
 print(f"DiGraph: {G.number_of_nodes()} nodes, {G.number_of_edges()} directed edges")
 print()
 
+from pathlib import Path
+out = Path(__file__).parent / "output"
+out.mkdir(exist_ok=True)
+
 # Hasse diagram — arrows point from faces→edges→vertices (high→low dim)
 fig, ax = plot_hasse(kc, figsize=(12, 9))
-fig.savefig("examples/hasse.png", dpi=150, bbox_inches="tight")
-print("Saved examples/hasse.png")
+fig.savefig(out / "hasse.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'hasse.png'}")
 plt.close(fig)
 
 # Hasse star of alice — her neighborhood highlighted
 fig, ax = plot_hasse_star(kc, "alice", figsize=(12, 9))
-fig.savefig("examples/hasse_star_alice.png", dpi=150, bbox_inches="tight")
-print("Saved examples/hasse_star_alice.png")
+fig.savefig(out / "hasse_star_alice.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'hasse_star_alice.png'}")
 plt.close(fig)
 
 # 7. Geometric realization — vertices as 3D points, edges as lines, faces as triangles
 fig, ax = plot_geometric(kc, figsize=(12, 9))
-fig.savefig("examples/geometric.png", dpi=150, bbox_inches="tight")
-print("Saved examples/geometric.png")
+fig.savefig(out / "geometric.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'geometric.png'}")
 plt.close(fig)

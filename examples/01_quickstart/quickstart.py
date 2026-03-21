@@ -7,7 +7,7 @@ fills in the faces, and shows how the topology changes.
 
 Run:
     pip install knowledgecomplex[analysis,viz]
-    python examples/quickstart.py
+    python examples/01_quickstart/quickstart.py
 """
 
 import os
@@ -123,15 +123,16 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-out = Path(__file__).parent
+out = Path(__file__).parent / "output"
+out.mkdir(exist_ok=True)
 
 fig, ax = plot_hasse(kc, figsize=(12, 9))
-fig.savefig(out / "quickstart_hasse.png", dpi=150, bbox_inches="tight")
-print(f"Saved {out / 'quickstart_hasse.png'}")
+fig.savefig(out / "hasse.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'hasse.png'}")
 
 fig, ax = plot_geometric(kc, figsize=(12, 9))
-fig.savefig(out / "quickstart_geometric.png", dpi=150, bbox_inches="tight")
-print(f"Saved {out / 'quickstart_geometric.png'}")
+fig.savefig(out / "geometric.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'geometric.png'}")
 
 plt.close("all")
-print("\nDone! See the PNG files in examples/")
+print("\nDone!")

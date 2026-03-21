@@ -10,7 +10,7 @@ that are enforced at write time, and how named queries can be registered
 on the schema for reuse.
 
 Run:
-    python examples/constraints.py
+    python examples/05_constraints/constraints.py
 """
 
 from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, ValidationError
