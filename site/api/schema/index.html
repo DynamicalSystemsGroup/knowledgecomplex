@@ -251,6 +251,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../ontology/" class="md-nav__link">
         
   
@@ -293,10 +320,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
@@ -314,8 +341,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2782,7 +2809,107 @@ shacl_ttl = sb.dump_shacl()</p>
 <span class="normal">1139</span>
 <span class="normal">1140</span>
 <span class="normal">1141</span>
-<span class="normal">1142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SchemaBuilder</span><span class="p">:</span>
+<span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
+<span class="normal">1151</span>
+<span class="normal">1152</span>
+<span class="normal">1153</span>
+<span class="normal">1154</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span>
+<span class="normal">1160</span>
+<span class="normal">1161</span>
+<span class="normal">1162</span>
+<span class="normal">1163</span>
+<span class="normal">1164</span>
+<span class="normal">1165</span>
+<span class="normal">1166</span>
+<span class="normal">1167</span>
+<span class="normal">1168</span>
+<span class="normal">1169</span>
+<span class="normal">1170</span>
+<span class="normal">1171</span>
+<span class="normal">1172</span>
+<span class="normal">1173</span>
+<span class="normal">1174</span>
+<span class="normal">1175</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span>
+<span class="normal">1217</span>
+<span class="normal">1218</span>
+<span class="normal">1219</span>
+<span class="normal">1220</span>
+<span class="normal">1221</span>
+<span class="normal">1222</span>
+<span class="normal">1223</span>
+<span class="normal">1224</span>
+<span class="normal">1225</span>
+<span class="normal">1226</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span>
+<span class="normal">1233</span>
+<span class="normal">1234</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span>
+<span class="normal">1241</span>
+<span class="normal">1242</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SchemaBuilder</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Author a knowledge complex schema: vertex types, edge types, face types.</span>
 
@@ -3481,7 +3608,7 @@ shacl_ttl = sb.dump_shacl()</p>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;PREFIX kc: &lt;https://example.org/kc#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;PREFIX kc: &lt;https://w3id.org/kc#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;SELECT ?</span><span class="si">{</span><span class="n">result_var</span><span class="si">}</span><span class="s2"> WHERE </span><span class="se">{{\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
@@ -3620,7 +3747,7 @@ shacl_ttl = sb.dump_shacl()</p>
         <span class="c1"># Wrap pattern in OPTIONAL so GROUP BY produces a row even when</span>
         <span class="c1"># there are zero matches (otherwise HAVING never fires for empty results)</span>
         <span class="n">sparql</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;PREFIX kc: &lt;https://example.org/kc#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;PREFIX kc: &lt;https://w3id.org/kc#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;SELECT $this WHERE </span><span class="se">{{\n</span><span class="s2">&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;    OPTIONAL </span><span class="se">{{</span><span class="s2"> </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> </span><span class="se">}}\n</span><span class="s2">&quot;</span>
@@ -3712,52 +3839,152 @@ shacl_ttl = sb.dump_shacl()</p>
 
         <span class="c1"># Discover model namespace: find a namespace binding that is not</span>
         <span class="c1"># one of the well-known prefixes (kc, kcs, sh, owl, rdfs, rdf, xsd)</span>
-        <span class="n">well_known</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="nb">str</span><span class="p">(</span><span class="n">_KC</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">_KCS</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">_SH</span><span class="p">),</span>
-            <span class="nb">str</span><span class="p">(</span><span class="n">OWL</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">RDFS</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">RDF</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">XSD</span><span class="p">),</span>
-        <span class="p">}</span>
+        <span class="c1"># Discover model namespace: find types that are subclasses of</span>
+        <span class="c1"># kc:Vertex, kc:Edge, or kc:Face, then resolve their namespace.</span>
+        <span class="n">kc_bases</span> <span class="o">=</span> <span class="p">{</span><span class="n">_KC</span><span class="o">.</span><span class="n">Vertex</span><span class="p">,</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Edge</span><span class="p">,</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Face</span><span class="p">}</span>
+        <span class="n">candidate_iris</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">URIRef</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">kc_class</span> <span class="ow">in</span> <span class="n">kc_bases</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">subj</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">kc_class</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">subj</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kc_bases</span> <span class="ow">and</span> <span class="n">subj</span> <span class="o">!=</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Element</span><span class="p">:</span>
+                    <span class="n">candidate_iris</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">subj</span><span class="p">)</span>
+
+        <span class="c1"># Also find types that subclass the candidates (inheritance)</span>
+        <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">changed</span><span class="p">:</span>
+            <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">candidate_iris</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidate_iris</span> <span class="ow">and</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kc_bases</span><span class="p">:</span>
+                        <span class="n">candidate_iris</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                        <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Resolve namespace from the first candidate IRI</span>
         <span class="n">namespace</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">ns_obj</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">namespaces</span><span class="p">():</span>
-            <span class="n">uri_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">prefix</span> <span class="ow">and</span> <span class="n">uri_str</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">well_known</span> <span class="ow">and</span> <span class="n">uri_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://example.org/&quot;</span><span class="p">):</span>
-                <span class="c1"># Skip shape namespaces (ending with /shape#)</span>
-                <span class="k">if</span> <span class="s2">&quot;/shape#&quot;</span> <span class="ow">in</span> <span class="n">uri_str</span><span class="p">:</span>
-                    <span class="k">continue</span>
-                <span class="n">namespace</span> <span class="o">=</span> <span class="n">prefix</span>
-                <span class="n">ns_obj</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">uri_str</span><span class="p">)</span>
-                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">candidate_iris</span><span class="p">:</span>
+            <span class="n">sample_iri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">candidate_iris</span><span class="p">)))</span>
+            <span class="c1"># IRI is like https://example.org/test#document → namespace is &quot;test&quot;</span>
+            <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">namespaces</span><span class="p">():</span>
+                <span class="n">uri_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">sample_iri</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">uri_str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">prefix</span><span class="p">:</span>
+                    <span class="n">namespace</span> <span class="o">=</span> <span class="n">prefix</span>
+                    <span class="n">ns_obj</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">uri_str</span><span class="p">)</span>
+                    <span class="k">break</span>
 
         <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Could not detect model namespace in </span><span class="si">{</span><span class="n">p</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">&#39;ontology.ttl&#39;</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="s2">&quot;Expected a namespace binding like &#39;aaa: &lt;https://example.org/aaa#&gt;&#39;.&quot;</span>
+                <span class="s2">&quot;No user-defined types (subclasses of kc:Vertex/Edge/Face) found.&quot;</span>
             <span class="p">)</span>
+
+        <span class="c1"># Derive shape namespace from model namespace</span>
+        <span class="c1"># e.g. https://example.org/ex# → https://example.org/ex/shape#</span>
+        <span class="n">base_iri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ns_obj</span><span class="p">)</span>
+        <span class="n">shape_base</span> <span class="o">=</span> <span class="n">base_iri</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;/shape#&quot;</span>
 
         <span class="c1"># Build instance without calling __init__</span>
         <span class="n">sb</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="n">sb</span><span class="o">.</span><span class="n">_namespace</span> <span class="o">=</span> <span class="n">namespace</span>
-        <span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ns_obj</span><span class="p">)</span>
+        <span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span> <span class="o">=</span> <span class="n">base_iri</span>
         <span class="n">sb</span><span class="o">.</span><span class="n">_ns</span> <span class="o">=</span> <span class="n">ns_obj</span>
-        <span class="n">sb</span><span class="o">.</span><span class="n">_nss</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;https://example.org/</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">/shape#&quot;</span><span class="p">)</span>
+        <span class="n">sb</span><span class="o">.</span><span class="n">_nss</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">shape_base</span><span class="p">)</span>
         <span class="n">sb</span><span class="o">.</span><span class="n">_owl_graph</span> <span class="o">=</span> <span class="n">owl_graph</span>
         <span class="n">sb</span><span class="o">.</span><span class="n">_shacl_graph</span> <span class="o">=</span> <span class="n">shacl_graph</span>
         <span class="n">sb</span><span class="o">.</span><span class="n">_attr_domains</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">sb</span><span class="o">.</span><span class="n">_queries</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># Reconstruct _types registry from OWL subclass triples</span>
+        <span class="c1"># Two passes: first find direct subclasses of kc:Vertex/Edge/Face,</span>
+        <span class="c1"># then find user types that subclass other user types (inheritance).</span>
         <span class="n">sb</span><span class="o">.</span><span class="n">_types</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">kind_map</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">_KC</span><span class="o">.</span><span class="n">Vertex</span><span class="p">:</span> <span class="s2">&quot;vertex&quot;</span><span class="p">,</span>
             <span class="n">_KC</span><span class="o">.</span><span class="n">Edge</span><span class="p">:</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span>
             <span class="n">_KC</span><span class="o">.</span><span class="n">Face</span><span class="p">:</span> <span class="s2">&quot;face&quot;</span><span class="p">,</span>
         <span class="p">}</span>
+        <span class="n">kc_base_iris</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">kind_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="p">{</span><span class="n">_KC</span><span class="o">.</span><span class="n">Element</span><span class="p">,</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Complex</span><span class="p">}</span>
+        <span class="n">user_type_iris</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">URIRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># local_name → IRI</span>
+
+        <span class="c1"># Pass 1: direct subclasses of kc base types</span>
         <span class="k">for</span> <span class="n">kc_class</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">kind_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">type_iri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">kc_class</span><span class="p">):</span>
-                <span class="c1"># Extract local name from IRI</span>
+                <span class="k">if</span> <span class="n">type_iri</span> <span class="ow">in</span> <span class="n">kc_base_iris</span><span class="p">:</span>
+                    <span class="k">continue</span>
                 <span class="n">local_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">type_iri</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">local_name</span><span class="p">:</span>
-                    <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">local_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">}</span>
+                <span class="k">if</span> <span class="n">local_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">local_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">):</span>
+                    <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">local_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span>
+                        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                        <span class="s2">&quot;parent&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="s2">&quot;bind&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="p">}</span>
+                    <span class="n">user_type_iris</span><span class="p">[</span><span class="n">local_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_iri</span>
+
+        <span class="c1"># Pass 2: find user types that subclass other user types (inheritance)</span>
+        <span class="c1"># Keep discovering until no new types are found</span>
+        <span class="n">iri_to_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">user_type_iris</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">changed</span><span class="p">:</span>
+            <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">parent_iri</span><span class="p">,</span> <span class="n">parent_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">iri_to_name</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="k">for</span> <span class="n">child_iri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">parent_iri</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">child_iri</span> <span class="ow">in</span> <span class="n">kc_base_iris</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">child_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child_iri</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">child_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">child_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">:</span>
+                        <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">parent_name</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">],</span>
+                            <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                            <span class="s2">&quot;parent&quot;</span><span class="p">:</span> <span class="n">parent_name</span><span class="p">,</span>
+                            <span class="s2">&quot;bind&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                        <span class="p">}</span>
+                        <span class="n">user_type_iris</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">child_iri</span>
+                        <span class="n">iri_to_name</span><span class="p">[</span><span class="n">child_iri</span><span class="p">]</span> <span class="o">=</span> <span class="n">child_name</span>
+                        <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Recover attributes from SHACL property shapes</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">type_iri</span> <span class="ow">in</span> <span class="n">user_type_iris</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">shape_iri</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">_nss</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">Shape&quot;</span><span class="p">]</span>
+            <span class="n">attrs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">bind</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">prop_node</span> <span class="ow">in</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">triples</span><span class="p">((</span><span class="n">shape_iri</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">property</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">path_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">path_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">attr_name</span> <span class="o">=</span> <span class="n">path_str</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">):]</span>
+
+                <span class="c1"># Check for sh:hasValue → bind</span>
+                <span class="n">has_value</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">hasValue</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">has_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">bind</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">has_value</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Check for sh:in → VocabDescriptor</span>
+                <span class="n">in_list</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="p">[</span><span class="s2">&quot;in&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">in_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Collection</span><span class="p">(</span><span class="n">shacl_graph</span><span class="p">,</span> <span class="n">in_list</span><span class="p">))</span>
+                    <span class="n">vocab_values</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
+                    <span class="n">max_count</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">maxCount</span><span class="p">)</span>
+                    <span class="n">multiple</span> <span class="o">=</span> <span class="n">max_count</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="n">attrs</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">VocabDescriptor</span><span class="p">(</span>
+                        <span class="n">values</span><span class="o">=</span><span class="n">vocab_values</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="n">multiple</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># TextDescriptor</span>
+                    <span class="n">min_count</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">minCount</span><span class="p">)</span>
+                    <span class="n">max_count</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">maxCount</span><span class="p">)</span>
+                    <span class="n">required</span> <span class="o">=</span> <span class="n">min_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">min_count</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+                    <span class="n">multiple</span> <span class="o">=</span> <span class="n">max_count</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="n">attrs</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">TextDescriptor</span><span class="p">(</span>
+                        <span class="n">required</span><span class="o">=</span><span class="n">required</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="n">multiple</span>
+                    <span class="p">)</span>
+
+            <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attrs</span>
+            <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;bind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bind</span>
 
         <span class="k">return</span> <span class="n">sb</span>
 </code></pre></div></td></tr></table></div>
@@ -5890,7 +6117,7 @@ predicate. Delegates to :meth:<code>add_sparql_constraint</code>.</p>
     <span class="c1"># Wrap pattern in OPTIONAL so GROUP BY produces a row even when</span>
     <span class="c1"># there are zero matches (otherwise HAVING never fires for empty results)</span>
     <span class="n">sparql</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;PREFIX kc: &lt;https://example.org/kc#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;PREFIX kc: &lt;https://w3id.org/kc#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="sa">f</span><span class="s2">&quot;PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="sa">f</span><span class="s2">&quot;SELECT $this WHERE </span><span class="se">{{\n</span><span class="s2">&quot;</span>
         <span class="sa">f</span><span class="s2">&quot;    OPTIONAL </span><span class="se">{{</span><span class="s2"> </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> </span><span class="se">}}\n</span><span class="s2">&quot;</span>
@@ -6285,7 +6512,107 @@ provided, copies all .sparql files into a queries/ subdirectory.</p>
 <span class="normal">1139</span>
 <span class="normal">1140</span>
 <span class="normal">1141</span>
-<span class="normal">1142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
+<span class="normal">1151</span>
+<span class="normal">1152</span>
+<span class="normal">1153</span>
+<span class="normal">1154</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span>
+<span class="normal">1160</span>
+<span class="normal">1161</span>
+<span class="normal">1162</span>
+<span class="normal">1163</span>
+<span class="normal">1164</span>
+<span class="normal">1165</span>
+<span class="normal">1166</span>
+<span class="normal">1167</span>
+<span class="normal">1168</span>
+<span class="normal">1169</span>
+<span class="normal">1170</span>
+<span class="normal">1171</span>
+<span class="normal">1172</span>
+<span class="normal">1173</span>
+<span class="normal">1174</span>
+<span class="normal">1175</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span>
+<span class="normal">1217</span>
+<span class="normal">1218</span>
+<span class="normal">1219</span>
+<span class="normal">1220</span>
+<span class="normal">1221</span>
+<span class="normal">1222</span>
+<span class="normal">1223</span>
+<span class="normal">1224</span>
+<span class="normal">1225</span>
+<span class="normal">1226</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span>
+<span class="normal">1233</span>
+<span class="normal">1234</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span>
+<span class="normal">1241</span>
+<span class="normal">1242</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SchemaBuilder&quot;</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load a schema from a directory containing ontology.ttl and shapes.ttl.</span>
@@ -6311,52 +6638,152 @@ provided, copies all .sparql files into a queries/ subdirectory.</p>
 
     <span class="c1"># Discover model namespace: find a namespace binding that is not</span>
     <span class="c1"># one of the well-known prefixes (kc, kcs, sh, owl, rdfs, rdf, xsd)</span>
-    <span class="n">well_known</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="nb">str</span><span class="p">(</span><span class="n">_KC</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">_KCS</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">_SH</span><span class="p">),</span>
-        <span class="nb">str</span><span class="p">(</span><span class="n">OWL</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">RDFS</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">RDF</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">XSD</span><span class="p">),</span>
-    <span class="p">}</span>
+    <span class="c1"># Discover model namespace: find types that are subclasses of</span>
+    <span class="c1"># kc:Vertex, kc:Edge, or kc:Face, then resolve their namespace.</span>
+    <span class="n">kc_bases</span> <span class="o">=</span> <span class="p">{</span><span class="n">_KC</span><span class="o">.</span><span class="n">Vertex</span><span class="p">,</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Edge</span><span class="p">,</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Face</span><span class="p">}</span>
+    <span class="n">candidate_iris</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">URIRef</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">kc_class</span> <span class="ow">in</span> <span class="n">kc_bases</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">subj</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">kc_class</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">subj</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kc_bases</span> <span class="ow">and</span> <span class="n">subj</span> <span class="o">!=</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Element</span><span class="p">:</span>
+                <span class="n">candidate_iris</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">subj</span><span class="p">)</span>
+
+    <span class="c1"># Also find types that subclass the candidates (inheritance)</span>
+    <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">while</span> <span class="n">changed</span><span class="p">:</span>
+        <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">candidate_iris</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidate_iris</span> <span class="ow">and</span> <span class="n">child</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kc_bases</span><span class="p">:</span>
+                    <span class="n">candidate_iris</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                    <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Resolve namespace from the first candidate IRI</span>
     <span class="n">namespace</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">ns_obj</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">namespaces</span><span class="p">():</span>
-        <span class="n">uri_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">prefix</span> <span class="ow">and</span> <span class="n">uri_str</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">well_known</span> <span class="ow">and</span> <span class="n">uri_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://example.org/&quot;</span><span class="p">):</span>
-            <span class="c1"># Skip shape namespaces (ending with /shape#)</span>
-            <span class="k">if</span> <span class="s2">&quot;/shape#&quot;</span> <span class="ow">in</span> <span class="n">uri_str</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="n">namespace</span> <span class="o">=</span> <span class="n">prefix</span>
-            <span class="n">ns_obj</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">uri_str</span><span class="p">)</span>
-            <span class="k">break</span>
+    <span class="k">if</span> <span class="n">candidate_iris</span><span class="p">:</span>
+        <span class="n">sample_iri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">candidate_iris</span><span class="p">)))</span>
+        <span class="c1"># IRI is like https://example.org/test#document → namespace is &quot;test&quot;</span>
+        <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">namespaces</span><span class="p">():</span>
+            <span class="n">uri_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sample_iri</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">uri_str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">prefix</span><span class="p">:</span>
+                <span class="n">namespace</span> <span class="o">=</span> <span class="n">prefix</span>
+                <span class="n">ns_obj</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">uri_str</span><span class="p">)</span>
+                <span class="k">break</span>
 
     <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Could not detect model namespace in </span><span class="si">{</span><span class="n">p</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">&#39;ontology.ttl&#39;</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="s2">&quot;Expected a namespace binding like &#39;aaa: &lt;https://example.org/aaa#&gt;&#39;.&quot;</span>
+            <span class="s2">&quot;No user-defined types (subclasses of kc:Vertex/Edge/Face) found.&quot;</span>
         <span class="p">)</span>
+
+    <span class="c1"># Derive shape namespace from model namespace</span>
+    <span class="c1"># e.g. https://example.org/ex# → https://example.org/ex/shape#</span>
+    <span class="n">base_iri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ns_obj</span><span class="p">)</span>
+    <span class="n">shape_base</span> <span class="o">=</span> <span class="n">base_iri</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;/shape#&quot;</span>
 
     <span class="c1"># Build instance without calling __init__</span>
     <span class="n">sb</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
     <span class="n">sb</span><span class="o">.</span><span class="n">_namespace</span> <span class="o">=</span> <span class="n">namespace</span>
-    <span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ns_obj</span><span class="p">)</span>
+    <span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span> <span class="o">=</span> <span class="n">base_iri</span>
     <span class="n">sb</span><span class="o">.</span><span class="n">_ns</span> <span class="o">=</span> <span class="n">ns_obj</span>
-    <span class="n">sb</span><span class="o">.</span><span class="n">_nss</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;https://example.org/</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">/shape#&quot;</span><span class="p">)</span>
+    <span class="n">sb</span><span class="o">.</span><span class="n">_nss</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">(</span><span class="n">shape_base</span><span class="p">)</span>
     <span class="n">sb</span><span class="o">.</span><span class="n">_owl_graph</span> <span class="o">=</span> <span class="n">owl_graph</span>
     <span class="n">sb</span><span class="o">.</span><span class="n">_shacl_graph</span> <span class="o">=</span> <span class="n">shacl_graph</span>
     <span class="n">sb</span><span class="o">.</span><span class="n">_attr_domains</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">sb</span><span class="o">.</span><span class="n">_queries</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Reconstruct _types registry from OWL subclass triples</span>
+    <span class="c1"># Two passes: first find direct subclasses of kc:Vertex/Edge/Face,</span>
+    <span class="c1"># then find user types that subclass other user types (inheritance).</span>
     <span class="n">sb</span><span class="o">.</span><span class="n">_types</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">kind_map</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">_KC</span><span class="o">.</span><span class="n">Vertex</span><span class="p">:</span> <span class="s2">&quot;vertex&quot;</span><span class="p">,</span>
         <span class="n">_KC</span><span class="o">.</span><span class="n">Edge</span><span class="p">:</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span>
         <span class="n">_KC</span><span class="o">.</span><span class="n">Face</span><span class="p">:</span> <span class="s2">&quot;face&quot;</span><span class="p">,</span>
     <span class="p">}</span>
+    <span class="n">kc_base_iris</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">kind_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="p">{</span><span class="n">_KC</span><span class="o">.</span><span class="n">Element</span><span class="p">,</span> <span class="n">_KC</span><span class="o">.</span><span class="n">Complex</span><span class="p">}</span>
+    <span class="n">user_type_iris</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">URIRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># local_name → IRI</span>
+
+    <span class="c1"># Pass 1: direct subclasses of kc base types</span>
     <span class="k">for</span> <span class="n">kc_class</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">kind_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">for</span> <span class="n">type_iri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">kc_class</span><span class="p">):</span>
-            <span class="c1"># Extract local name from IRI</span>
+            <span class="k">if</span> <span class="n">type_iri</span> <span class="ow">in</span> <span class="n">kc_base_iris</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="n">local_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">type_iri</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">local_name</span><span class="p">:</span>
-                <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">local_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">local_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">local_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">):</span>
+                <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">local_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span>
+                    <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s2">&quot;parent&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;bind&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="p">}</span>
+                <span class="n">user_type_iris</span><span class="p">[</span><span class="n">local_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_iri</span>
+
+    <span class="c1"># Pass 2: find user types that subclass other user types (inheritance)</span>
+    <span class="c1"># Keep discovering until no new types are found</span>
+    <span class="n">iri_to_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">user_type_iris</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">while</span> <span class="n">changed</span><span class="p">:</span>
+        <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">parent_iri</span><span class="p">,</span> <span class="n">parent_name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">iri_to_name</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">child_iri</span> <span class="ow">in</span> <span class="n">owl_graph</span><span class="o">.</span><span class="n">subjects</span><span class="p">(</span><span class="n">RDFS</span><span class="o">.</span><span class="n">subClassOf</span><span class="p">,</span> <span class="n">parent_iri</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">child_iri</span> <span class="ow">in</span> <span class="n">kc_base_iris</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">child_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child_iri</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">child_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">child_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">:</span>
+                    <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">parent_name</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                        <span class="s2">&quot;parent&quot;</span><span class="p">:</span> <span class="n">parent_name</span><span class="p">,</span>
+                        <span class="s2">&quot;bind&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="p">}</span>
+                    <span class="n">user_type_iris</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">child_iri</span>
+                    <span class="n">iri_to_name</span><span class="p">[</span><span class="n">child_iri</span><span class="p">]</span> <span class="o">=</span> <span class="n">child_name</span>
+                    <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Recover attributes from SHACL property shapes</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">type_iri</span> <span class="ow">in</span> <span class="n">user_type_iris</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">shape_iri</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">_nss</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">Shape&quot;</span><span class="p">]</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">bind</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">prop_node</span> <span class="ow">in</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">triples</span><span class="p">((</span><span class="n">shape_iri</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">property</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">path_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">path_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">attr_name</span> <span class="o">=</span> <span class="n">path_str</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">sb</span><span class="o">.</span><span class="n">_base_iri</span><span class="p">):]</span>
+
+            <span class="c1"># Check for sh:hasValue → bind</span>
+            <span class="n">has_value</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">hasValue</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">has_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">bind</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">has_value</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Check for sh:in → VocabDescriptor</span>
+            <span class="n">in_list</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="p">[</span><span class="s2">&quot;in&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">in_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Collection</span><span class="p">(</span><span class="n">shacl_graph</span><span class="p">,</span> <span class="n">in_list</span><span class="p">))</span>
+                <span class="n">vocab_values</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">)</span>
+                <span class="n">max_count</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">maxCount</span><span class="p">)</span>
+                <span class="n">multiple</span> <span class="o">=</span> <span class="n">max_count</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">VocabDescriptor</span><span class="p">(</span>
+                    <span class="n">values</span><span class="o">=</span><span class="n">vocab_values</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="n">multiple</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># TextDescriptor</span>
+                <span class="n">min_count</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">minCount</span><span class="p">)</span>
+                <span class="n">max_count</span> <span class="o">=</span> <span class="n">shacl_graph</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">prop_node</span><span class="p">,</span> <span class="n">_SH</span><span class="o">.</span><span class="n">maxCount</span><span class="p">)</span>
+                <span class="n">required</span> <span class="o">=</span> <span class="n">min_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">min_count</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span>
+                <span class="n">multiple</span> <span class="o">=</span> <span class="n">max_count</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">TextDescriptor</span><span class="p">(</span>
+                    <span class="n">required</span><span class="o">=</span><span class="n">required</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="n">multiple</span>
+                <span class="p">)</span>
+
+        <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attrs</span>
+        <span class="n">sb</span><span class="o">.</span><span class="n">_types</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;bind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bind</span>
 
     <span class="k">return</span> <span class="n">sb</span>
 </code></pre></div></td></tr></table></div>

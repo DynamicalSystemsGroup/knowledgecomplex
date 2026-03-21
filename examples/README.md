@@ -15,6 +15,7 @@ Generated outputs (PNGs, temp files) go into an `output/` subdirectory.
 | 08 | `08_temporal_sweep/` | Non-filtration time slicing: elements with active_from/active_until, parameterized queries |
 | 09 | `09_diff_sequence/` | ComplexDiff and ComplexSequence: sprint-by-sprint evolution with SPARQL UPDATE export/import |
 | 10 | `10_markdown_codec/` | MarkdownCodec: round-trip KC elements to YAML+markdown files, verify consistency |
+| 11 | `11_local_partition/` | Local partitioning via diffusion: PageRank, heat kernel, Hodge edge partition on a barbell graph |
 
 ## Running
 

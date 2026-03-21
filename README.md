@@ -68,7 +68,7 @@ print(df)
 print(kc.dump_graph())       # Turtle string
 ```
 
-See [`examples/`](examples/) for 10 runnable examples covering all features below.
+See [`examples/`](examples/) for 11 runnable examples covering all features below.
 
 ## Topological queries
 
@@ -130,6 +130,23 @@ from knowledgecomplex import betti_numbers, euler_characteristic, edge_pagerank
 betti = betti_numbers(kc)          # [beta_0, beta_1, beta_2]
 chi = euler_characteristic(kc)     # V - E + F
 pr = edge_pagerank(kc, "e1")       # personalized edge PageRank vector
+```
+
+## Local partitioning
+
+Find clusters via diffusion — spread probability from a seed and sweep to find natural bottlenecks:
+
+```python
+from knowledgecomplex.analysis import local_partition, edge_local_partition
+
+# Vertex clusters via PageRank or heat kernel diffusion
+cut = local_partition(kc, seed="alice", method="pagerank")
+cut.vertices       # vertex IDs on the small side
+cut.conductance    # lower = cleaner partition
+
+# Edge clusters via Hodge Laplacian diffusion
+edge_cut = edge_local_partition(kc, seed_edge="e1", method="hodge_pagerank")
+edge_cut.edges     # relationship cluster around e1
 ```
 
 ## Filtrations and time-varying complexes

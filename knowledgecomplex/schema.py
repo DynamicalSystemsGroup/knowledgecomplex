@@ -1092,51 +1092,151 @@ class SchemaBuilder:
 
         # Discover model namespace: find a namespace binding that is not
         # one of the well-known prefixes (kc, kcs, sh, owl, rdfs, rdf, xsd)
-        well_known = {
-            str(_KC), str(_KCS), str(_SH),
-            str(OWL), str(RDFS), str(RDF), str(XSD),
-        }
+        # Discover model namespace: find types that are subclasses of
+        # kc:Vertex, kc:Edge, or kc:Face, then resolve their namespace.
+        kc_bases = {_KC.Vertex, _KC.Edge, _KC.Face}
+        candidate_iris: set[URIRef] = set()
+        for kc_class in kc_bases:
+            for subj in owl_graph.subjects(RDFS.subClassOf, kc_class):
+                if subj not in kc_bases and subj != _KC.Element:
+                    candidate_iris.add(subj)
+
+        # Also find types that subclass the candidates (inheritance)
+        changed = True
+        while changed:
+            changed = False
+            for parent in list(candidate_iris):
+                for child in owl_graph.subjects(RDFS.subClassOf, parent):
+                    if child not in candidate_iris and child not in kc_bases:
+                        candidate_iris.add(child)
+                        changed = True
+
+        # Resolve namespace from the first candidate IRI
         namespace = None
         ns_obj = None
-        for prefix, uri in owl_graph.namespaces():
-            uri_str = str(uri)
-            if prefix and uri_str not in well_known and uri_str.startswith("https://example.org/"):
-                # Skip shape namespaces (ending with /shape#)
-                if "/shape#" in uri_str:
-                    continue
-                namespace = prefix
-                ns_obj = Namespace(uri_str)
-                break
+        if candidate_iris:
+            sample_iri = str(next(iter(candidate_iris)))
+            # IRI is like https://example.org/test#document → namespace is "test"
+            for prefix, uri in owl_graph.namespaces():
+                uri_str = str(uri)
+                if sample_iri.startswith(uri_str) and prefix:
+                    namespace = prefix
+                    ns_obj = Namespace(uri_str)
+                    break
 
         if namespace is None:
             raise ValueError(
                 f"Could not detect model namespace in {p / 'ontology.ttl'}. "
-                "Expected a namespace binding like 'aaa: <https://example.org/aaa#>'."
+                "No user-defined types (subclasses of kc:Vertex/Edge/Face) found."
             )
+
+        # Derive shape namespace from model namespace
+        # e.g. https://example.org/ex# → https://example.org/ex/shape#
+        base_iri = str(ns_obj)
+        shape_base = base_iri.rstrip("#") + "/shape#"
 
         # Build instance without calling __init__
         sb = object.__new__(cls)
         sb._namespace = namespace
-        sb._base_iri = str(ns_obj)
+        sb._base_iri = base_iri
         sb._ns = ns_obj
-        sb._nss = Namespace(f"https://example.org/{namespace}/shape#")
+        sb._nss = Namespace(shape_base)
         sb._owl_graph = owl_graph
         sb._shacl_graph = shacl_graph
         sb._attr_domains = {}
         sb._queries = {}
 
         # Reconstruct _types registry from OWL subclass triples
+        # Two passes: first find direct subclasses of kc:Vertex/Edge/Face,
+        # then find user types that subclass other user types (inheritance).
         sb._types = {}
         kind_map = {
             _KC.Vertex: "vertex",
             _KC.Edge: "edge",
             _KC.Face: "face",
         }
+        kc_base_iris = set(kind_map.keys()) | {_KC.Element, _KC.Complex}
+        user_type_iris: dict[str, URIRef] = {}  # local_name → IRI
+
+        # Pass 1: direct subclasses of kc base types
         for kc_class, kind in kind_map.items():
             for type_iri in owl_graph.subjects(RDFS.subClassOf, kc_class):
-                # Extract local name from IRI
+                if type_iri in kc_base_iris:
+                    continue
                 local_name = str(type_iri).replace(sb._base_iri, "")
-                if local_name:
-                    sb._types[local_name] = {"kind": kind}
+                if local_name and not local_name.startswith("http"):
+                    sb._types[local_name] = {
+                        "kind": kind,
+                        "attributes": {},
+                        "parent": None,
+                        "bind": {},
+                    }
+                    user_type_iris[local_name] = type_iri
+
+        # Pass 2: find user types that subclass other user types (inheritance)
+        # Keep discovering until no new types are found
+        iri_to_name = {v: k for k, v in user_type_iris.items()}
+        changed = True
+        while changed:
+            changed = False
+            for parent_iri, parent_name in list(iri_to_name.items()):
+                for child_iri in owl_graph.subjects(RDFS.subClassOf, parent_iri):
+                    if child_iri in kc_base_iris:
+                        continue
+                    child_name = str(child_iri).replace(sb._base_iri, "")
+                    if child_name and not child_name.startswith("http") and child_name not in sb._types:
+                        sb._types[child_name] = {
+                            "kind": sb._types[parent_name]["kind"],
+                            "attributes": {},
+                            "parent": parent_name,
+                            "bind": {},
+                        }
+                        user_type_iris[child_name] = child_iri
+                        iri_to_name[child_iri] = child_name
+                        changed = True
+
+        # Recover attributes from SHACL property shapes
+        for name, type_iri in user_type_iris.items():
+            shape_iri = sb._nss[f"{name}Shape"]
+            attrs = {}
+            bind = {}
+
+            for _, _, prop_node in shacl_graph.triples((shape_iri, _SH.property, None)):
+                path = shacl_graph.value(prop_node, _SH.path)
+                if path is None:
+                    continue
+                path_str = str(path)
+                if not path_str.startswith(sb._base_iri):
+                    continue
+                attr_name = path_str[len(sb._base_iri):]
+
+                # Check for sh:hasValue → bind
+                has_value = shacl_graph.value(prop_node, _SH.hasValue)
+                if has_value is not None:
+                    bind[attr_name] = str(has_value)
+                    continue
+
+                # Check for sh:in → VocabDescriptor
+                in_list = shacl_graph.value(prop_node, _SH["in"])
+                if in_list is not None:
+                    values = list(Collection(shacl_graph, in_list))
+                    vocab_values = tuple(str(v) for v in values)
+                    max_count = shacl_graph.value(prop_node, _SH.maxCount)
+                    multiple = max_count is None
+                    attrs[attr_name] = VocabDescriptor(
+                        values=vocab_values, multiple=multiple
+                    )
+                else:
+                    # TextDescriptor
+                    min_count = shacl_graph.value(prop_node, _SH.minCount)
+                    max_count = shacl_graph.value(prop_node, _SH.maxCount)
+                    required = min_count is not None and int(min_count) >= 1
+                    multiple = max_count is None
+                    attrs[attr_name] = TextDescriptor(
+                        required=required, multiple=multiple
+                    )
+
+            sb._types[name]["attributes"] = attrs
+            sb._types[name]["bind"] = bind
 
         return sb

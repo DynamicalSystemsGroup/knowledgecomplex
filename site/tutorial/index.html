@@ -1,0 +1,1456 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://blockscience.github.io/knowledgecomplex/tutorial/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../ontology/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Tutorial - knowledgecomplex</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tutorial" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="knowledgecomplex" class="md-header__button md-logo" aria-label="knowledgecomplex" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            knowledgecomplex
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tutorial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/blockscience/knowledgecomplex" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    blockscience/knowledgecomplex
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="knowledgecomplex" class="md-nav__button md-logo" aria-label="knowledgecomplex" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    knowledgecomplex
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/blockscience/knowledgecomplex" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    blockscience/knowledgecomplex
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-define-a-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Define a schema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Define a schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attribute-descriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attribute descriptors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-inheritance-and-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type inheritance and binding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introspection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-build-a-complex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Build a complex
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Build a complex">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-gets-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What gets enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#element-handles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Element handles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-topological-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Topological queries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-algebraic-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Algebraic analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-filtrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Filtrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-clique-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Clique inference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-export-and-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Export and load
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-verification-and-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Verification and audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-pre-built-ontologies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Pre-built ontologies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ontology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ontology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/viz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algebraic Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/clique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clique Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/filtration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/diff/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diffs & Sequences
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File I/O
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/codecs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codecs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-define-a-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Define a schema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Define a schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attribute-descriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attribute descriptors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-inheritance-and-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type inheritance and binding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introspection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-build-a-complex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Build a complex
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Build a complex">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-gets-enforced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What gets enforced
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#element-handles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Element handles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-topological-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Topological queries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-algebraic-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Algebraic analysis
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-filtrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Filtrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-clique-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Clique inference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-export-and-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Export and load
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-verification-and-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Verification and audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-pre-built-ontologies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Pre-built ontologies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="tutorial">Tutorial</h1>
+<p>A progressive walkthrough of knowledgecomplex, from schema definition through algebraic topology.</p>
+<h2 id="1-define-a-schema">1. Define a schema</h2>
+<p>A schema declares vertex, edge, and face types with attributes. The <code>SchemaBuilder</code> generates OWL and SHACL automatically.</p>
+<pre><code class="language-python">from knowledgecomplex import SchemaBuilder, vocab, text
+
+sb = SchemaBuilder(namespace=&quot;vv&quot;)
+
+# Vertex types (subclass of kc:Vertex)
+sb.add_vertex_type(&quot;requirement&quot;, attributes={&quot;title&quot;: text()})
+sb.add_vertex_type(&quot;test_case&quot;,   attributes={&quot;title&quot;: text()})
+
+# Edge type with controlled vocabulary (enforced via sh:in)
+sb.add_edge_type(&quot;verifies&quot;, attributes={
+    &quot;status&quot;: vocab(&quot;passing&quot;, &quot;failing&quot;, &quot;pending&quot;),
+})
+
+# Face type
+sb.add_face_type(&quot;coverage&quot;)
+</code></pre>
+<h3 id="attribute-descriptors">Attribute descriptors</h3>
+<table>
+<thead>
+<tr>
+<th>Descriptor</th>
+<th>What it generates</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text()</code></td>
+<td><code>xsd:string</code>, required, single-valued</td>
+<td><code>title: text()</code></td>
+</tr>
+<tr>
+<td><code>text(required=False)</code></td>
+<td><code>xsd:string</code>, optional</td>
+<td><code>notes: text(required=False)</code></td>
+</tr>
+<tr>
+<td><code>text(multiple=True)</code></td>
+<td><code>xsd:string</code>, required, multi-valued</td>
+<td><code>tags: text(multiple=True)</code></td>
+</tr>
+<tr>
+<td><code>vocab("a", "b")</code></td>
+<td><code>sh:in ("a" "b")</code>, required, single-valued</td>
+<td><code>status: vocab("pass", "fail")</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="type-inheritance-and-binding">Type inheritance and binding</h3>
+<p>Types can inherit from other user-defined types. Child types can bind inherited attributes to fixed values:</p>
+<pre><code class="language-python">sb.add_vertex_type(&quot;document&quot;, attributes={&quot;title&quot;: text(), &quot;category&quot;: text()})
+sb.add_vertex_type(&quot;specification&quot;, parent=&quot;document&quot;,
+                   attributes={&quot;format&quot;: text()},
+                   bind={&quot;category&quot;: &quot;structural&quot;})
+</code></pre>
+<h3 id="introspection">Introspection</h3>
+<pre><code class="language-python">sb.describe_type(&quot;specification&quot;)
+# {'name': 'specification', 'kind': 'vertex', 'parent': 'document',
+#  'own_attributes': {'format': text()},
+#  'inherited_attributes': {'title': text(), 'category': text()},
+#  'all_attributes': {'title': text(), 'category': text(), 'format': text()},
+#  'bound': {'category': 'structural'}}
+
+sb.type_names(kind=&quot;vertex&quot;)   # ['document', 'specification']
+</code></pre>
+<h2 id="2-build-a-complex">2. Build a complex</h2>
+<p>A <code>KnowledgeComplex</code> manages instances. Every write triggers SHACL verification — the graph is always in a valid state.</p>
+<pre><code class="language-python">from knowledgecomplex import KnowledgeComplex
+
+kc = KnowledgeComplex(schema=sb)
+
+# Vertices have no boundary — always valid
+kc.add_vertex(&quot;req-001&quot;, type=&quot;requirement&quot;, title=&quot;Boot time &lt; 5s&quot;)
+kc.add_vertex(&quot;tc-001&quot;,  type=&quot;test_case&quot;,   title=&quot;Boot smoke test&quot;)
+kc.add_vertex(&quot;tc-002&quot;,  type=&quot;test_case&quot;,   title=&quot;Boot regression&quot;)
+
+# Edges need their boundary vertices to already exist (slice rule)
+kc.add_edge(&quot;ver-001&quot;, type=&quot;verifies&quot;,
+            vertices={&quot;req-001&quot;, &quot;tc-001&quot;}, status=&quot;passing&quot;)
+kc.add_edge(&quot;ver-002&quot;, type=&quot;verifies&quot;,
+            vertices={&quot;req-001&quot;, &quot;tc-002&quot;}, status=&quot;pending&quot;)
+kc.add_edge(&quot;ver-003&quot;, type=&quot;verifies&quot;,
+            vertices={&quot;tc-001&quot;, &quot;tc-002&quot;}, status=&quot;passing&quot;)
+
+# Faces need 3 boundary edges forming a closed triangle
+kc.add_face(&quot;cov-001&quot;, type=&quot;coverage&quot;,
+            boundary=[&quot;ver-001&quot;, &quot;ver-002&quot;, &quot;ver-003&quot;])
+</code></pre>
+<h3 id="what-gets-enforced">What gets enforced</h3>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>When</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Type must be registered</td>
+<td>Before RDF assertions</td>
+<td><code>ValidationError</code></td>
+</tr>
+<tr>
+<td>Boundary cardinality (2 for edges, 3 for faces)</td>
+<td>Before SHACL</td>
+<td><code>ValueError</code></td>
+</tr>
+<tr>
+<td>Boundary elements must exist in complex (slice rule)</td>
+<td>SHACL on write</td>
+<td><code>ValidationError</code> + rollback</td>
+</tr>
+<tr>
+<td>Vocab values must be in allowed set</td>
+<td>SHACL on write</td>
+<td><code>ValidationError</code> + rollback</td>
+</tr>
+<tr>
+<td>Face boundary edges must form closed triangle</td>
+<td>SHACL on write</td>
+<td><code>ValidationError</code> + rollback</td>
+</tr>
+</tbody>
+</table>
+<h3 id="element-handles">Element handles</h3>
+<pre><code class="language-python">elem = kc.element(&quot;req-001&quot;)
+elem.id      # &quot;req-001&quot;
+elem.type    # &quot;requirement&quot;
+elem.attrs   # {&quot;title&quot;: &quot;Boot time &lt; 5s&quot;}
+
+kc.element_ids(type=&quot;test_case&quot;)   # [&quot;tc-001&quot;, &quot;tc-002&quot;]
+kc.elements(type=&quot;test_case&quot;)      # [Element('tc-001', ...), Element('tc-002', ...)]
+</code></pre>
+<h2 id="3-topological-queries">3. Topological queries</h2>
+<p>Every query returns <code>set[str]</code> for natural set algebra. All accept an optional <code>type=</code> filter.</p>
+<pre><code class="language-python"># Boundary operator ∂
+kc.boundary(&quot;ver-001&quot;)     # {'req-001', 'tc-001'}  (edge → vertices)
+kc.boundary(&quot;cov-001&quot;)     # {'ver-001', 'ver-002', 'ver-003'}  (face → edges)
+kc.boundary(&quot;req-001&quot;)     # set()  (vertex → empty)
+
+# Coboundary (inverse boundary)
+kc.coboundary(&quot;req-001&quot;)   # {'ver-001', 'ver-002'}  (vertex → incident edges)
+
+# Star: all simplices containing σ as a face
+kc.star(&quot;req-001&quot;)         # req-001 + incident edges + incident faces
+
+# Closure: smallest subcomplex containing σ
+kc.closure(&quot;cov-001&quot;)      # cov-001 + 3 edges + 3 vertices
+
+# Link: Cl(St(σ)) \ St(σ)
+kc.link(&quot;req-001&quot;)
+
+# Skeleton: elements up to dimension k
+kc.skeleton(0)   # vertices only
+kc.skeleton(1)   # vertices + edges
+
+# Degree
+kc.degree(&quot;req-001&quot;)   # 2
+
+# Subcomplex check
+kc.is_subcomplex({&quot;req-001&quot;, &quot;tc-001&quot;, &quot;ver-001&quot;})   # True
+kc.is_subcomplex({&quot;ver-001&quot;})                         # False (missing vertices)
+
+# Set algebra composes naturally
+shared = kc.star(&quot;req-001&quot;) &amp; kc.star(&quot;tc-001&quot;)
+</code></pre>
+<h2 id="4-algebraic-analysis">4. Algebraic analysis</h2>
+<p>Requires <code>pip install knowledgecomplex[analysis]</code>.</p>
+<pre><code class="language-python">from knowledgecomplex.analysis import (
+    boundary_matrices, betti_numbers, euler_characteristic,
+    hodge_laplacian, edge_pagerank, hodge_decomposition, hodge_analysis,
+)
+
+# Boundary matrices (sparse)
+bm = boundary_matrices(kc)
+# bm.B1: (n_vertices × n_edges), bm.B2: (n_edges × n_faces)
+# Invariant: B1 @ B2 = 0 (∂₁ ∘ ∂₂ = 0)
+
+# Betti numbers
+betti = betti_numbers(kc)     # [β₀, β₁, β₂]
+chi = euler_characteristic(kc) # V - E + F = β₀ - β₁ + β₂
+
+# Hodge Laplacian
+L1 = hodge_laplacian(kc)      # B1ᵀB1 + B2B2ᵀ (symmetric PSD)
+# dim(ker L₁) = β₁
+
+# Edge PageRank
+pr = edge_pagerank(kc, &quot;ver-001&quot;, beta=0.1)   # (βI + L₁)⁻¹ χ_e
+
+# Hodge decomposition: flow = gradient + curl + harmonic
+decomp = hodge_decomposition(kc, pr)
+# decomp.gradient  — im(B1ᵀ), vertex-driven flow
+# decomp.curl      — im(B2), face-driven circulation
+# decomp.harmonic  — ker(L₁), topological cycles
+
+# Full analysis in one call
+results = hodge_analysis(kc, beta=0.1)
+</code></pre>
+<p>All analysis functions accept an optional <code>weights</code> dict mapping element IDs to scalar weights, which factor into the Laplacian as diagonal weight matrices.</p>
+<h2 id="5-filtrations">5. Filtrations</h2>
+<p>A filtration is a nested sequence of valid subcomplexes: C₀ ⊆ C₁ ⊆ ... ⊆ Cₘ.</p>
+<pre><code class="language-python">from knowledgecomplex import Filtration
+
+filt = Filtration(kc)
+filt.append({&quot;req-001&quot;})                              # must be valid subcomplex
+filt.append_closure({&quot;ver-001&quot;})                       # auto-closes + unions with previous
+filt.append_closure({&quot;cov-001&quot;})                       # adds face + all boundary
+
+filt.birth(&quot;cov-001&quot;)   # index where element first appears
+filt.new_at(2)          # elements added at step 2 (Cₚ \ Cₚ₋₁)
+filt[1]                 # set of element IDs at step 1
+
+# Build from a scoring function
+filt2 = Filtration.from_function(kc, lambda eid: some_score(eid))
+</code></pre>
+<h2 id="6-clique-inference">6. Clique inference</h2>
+<p>Discover higher-order structure hiding in the edge graph:</p>
+<pre><code class="language-python">from knowledgecomplex import find_cliques, infer_faces
+
+# Pure query — what triangles exist?
+triangles = find_cliques(kc, k=3)
+
+# Fill in all triangles as typed faces
+added = infer_faces(kc, &quot;coverage&quot;)
+
+# Preview without modifying
+preview = infer_faces(kc, &quot;coverage&quot;, dry_run=True)
+</code></pre>
+<h2 id="7-export-and-load">7. Export and load</h2>
+<pre><code class="language-python"># Export schema + instance to a directory
+kc.export(&quot;output/my_complex&quot;)
+# Creates: ontology.ttl, shapes.ttl, instance.ttl, queries/*.sparql
+
+# Reconstruct from exported files
+kc2 = KnowledgeComplex.load(&quot;output/my_complex&quot;)
+kc2.audit().conforms   # True
+</code></pre>
+<p>Multi-format serialization:</p>
+<pre><code class="language-python">from knowledgecomplex import save_graph, load_graph
+
+save_graph(kc, &quot;data.jsonld&quot;, format=&quot;json-ld&quot;)
+load_graph(kc, &quot;data.ttl&quot;)   # additive loading
+</code></pre>
+<h2 id="8-verification-and-audit">8. Verification and audit</h2>
+<pre><code class="language-python"># Throwing verification
+kc.verify()   # raises ValidationError on failure
+
+# Non-throwing audit
+report = kc.audit()
+report.conforms       # bool
+report.violations     # list[AuditViolation]
+print(report)         # human-readable summary
+
+# Deferred verification for bulk construction
+with kc.deferred_verification():
+    for item in big_dataset:
+        kc.add_vertex(item.id, type=item.type, **item.attrs)
+    # ... add edges, faces ...
+# Single SHACL pass runs on exit
+
+# Static file verification (no Python objects needed)
+from knowledgecomplex import audit_file
+report = audit_file(&quot;data/instance.ttl&quot;, shapes=&quot;data/shapes.ttl&quot;,
+                    ontology=&quot;data/ontology.ttl&quot;)
+</code></pre>
+<h2 id="9-pre-built-ontologies">9. Pre-built ontologies</h2>
+<p>Three ontologies ship with the package:</p>
+<pre><code class="language-python">from knowledgecomplex.ontologies import operations, brand, research
+
+sb = operations.schema()   # actor, activity, resource
+sb = brand.schema()        # audience, theme
+sb = research.schema()     # paper, concept, note
+</code></pre>
+<h2 id="gotchas">Gotchas</h2>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Slice rule</strong></td>
+<td>Boundary elements must exist before the element that references them. Add vertices → edges → faces.</td>
+</tr>
+<tr>
+<td><strong>Closed triangle</strong></td>
+<td>A face's 3 edges must span exactly 3 vertices in a cycle. An open fan or 4-vertex path will fail.</td>
+</tr>
+<tr>
+<td><strong><code>remove_element</code></strong></td>
+<td>No post-removal verification. Remove faces before their edges, edges before their vertices.</td>
+</tr>
+<tr>
+<td><strong>Schema after <code>load()</code></strong></td>
+<td><code>load()</code> recovers type names, kinds, attributes, and parent relationships from OWL + SHACL. Full <code>describe_type()</code> introspection works after loading.</td>
+</tr>
+<tr>
+<td><strong>Deferred verification</strong></td>
+<td>Inside the context manager, intermediate states need not be valid. Verification runs once on exit.</td>
+</tr>
+<tr>
+<td><strong>Face orientation</strong></td>
+<td>Boundary matrix signs are computed internally to guarantee ∂₁∘∂₂ = 0. The orientation is consistent but not guaranteed to match external conventions.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
