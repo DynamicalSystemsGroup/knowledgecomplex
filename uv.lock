@@ -584,6 +584,7 @@ dependencies = [
     { name = "owlrl" },
     { name = "pandas" },
     { name = "pyshacl" },
+    { name = "pyyaml" },
     { name = "rdflib" },
 ]
 
@@ -628,6 +629,7 @@ requires-dist = [
     { name = "pyshacl", specifier = ">=0.25" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "rdflib", specifier = ">=7.0" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "scipy", marker = "extra == 'analysis'", specifier = ">=1.10" },
