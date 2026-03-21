@@ -28,7 +28,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS, XSD
+from rdflib import Graph, Namespace, URIRef, Literal, RDF, XSD
 
 if TYPE_CHECKING:
     from knowledgecomplex.graph import KnowledgeComplex

@@ -17,7 +17,7 @@ dump_owl() and dump_shacl() return merged (core + user) Turtle strings.
 
 from __future__ import annotations
 import shutil
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 

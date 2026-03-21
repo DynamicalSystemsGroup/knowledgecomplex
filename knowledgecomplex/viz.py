@@ -608,7 +608,7 @@ def plot_geometric(
         The matplotlib Figure and Axes3D.
     """
     _, plt = _require_mpl()
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
     colors = type_color_map(kc)
     pos = _vertex_positions_3d(kc)

@@ -58,20 +58,11 @@ print(f"  β₁ = {betti_before[1]} independent cycles")
 print(f"  Euler characteristic: {euler_characteristic(kc)}")
 print()
 
-# ── 4. Declare a face type and fill in faces ─────────────────────────────
+# ── 4. Fill in faces using the declared face types ────────────────────────
 
-# The two triangles have distinct semantics:
+# The schema already declares two face types:
 #   operation:  actor + activity + input resource  (requires/accesses)
 #   production: actor + activity + output resource (produces/responsible)
-kc._schema.add_face_type("operation")
-kc._schema.add_face_type("production")
-
-# After extending the schema, refresh the internal graphs so the new types
-# are visible to SPARQL queries and SHACL validation.
-kc._ont_graph.parse(data=kc._schema.dump_owl(), format="turtle")
-kc._instance_graph.parse(data=kc._schema.dump_owl(), format="turtle")
-kc._shacl_graph.parse(data=kc._schema.dump_shacl(), format="turtle")
-
 # Inspect the triangles to decide which type each gets.
 # The input triangle uses "requires" + "accesses" edges → operation
 # The output triangle uses "produces" + "responsible" edges → production

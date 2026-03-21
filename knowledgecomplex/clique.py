@@ -299,9 +299,6 @@ def fill_cliques(
 
     # k>2: higher-order generic simplices
     if max_order >= 3:
-        from rdflib import URIRef, RDF
-        _KC_NS = kc._instance_graph.namespace_manager.store
-
         for dim in range(3, max_order + 1):
             cliques = find_cliques(kc, k=dim + 1, edge_type=edge_type)
             added: list[str] = []
