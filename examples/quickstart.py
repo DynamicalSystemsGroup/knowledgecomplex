@@ -7,7 +7,7 @@ Models a data pipeline as a typed simplicial complex:
   - 2 faces: an operation triangle and a production triangle
 
 Run:
-    pip install knowledgecomplex[viz]
+    pip install knowledgecomplex[viz,analysis]
     python examples/quickstart.py
 """
 
@@ -61,22 +61,59 @@ print("=== Skeleton k=1 (vertices + edges only) ===")
 print(kc.skeleton(1))
 print()
 
-# 5. Inspect the RDF
+# 5. Algebraic topology
+from knowledgecomplex import betti_numbers, euler_characteristic, edge_pagerank, edge_influence
+
+betti = betti_numbers(kc)
+chi = euler_characteristic(kc)
+print(f"=== Betti numbers: {betti} ===")
+print(f"  beta_0 = {betti[0]}  (connected components)")
+print(f"  beta_1 = {betti[1]}  (independent cycles)")
+print(f"  beta_2 = {betti[2]}  (enclosed voids)")
+print(f"  Euler characteristic chi = {chi}  (V - E + F = {len(kc.skeleton(0))} - {len(kc.skeleton(1) - kc.skeleton(0))} + {len(kc.skeleton(2) - kc.skeleton(1))})")
+print()
+
+# Edge PageRank — measure influence of each edge on the complex
+from knowledgecomplex import boundary_matrices
+bm = boundary_matrices(kc)
+print("=== Edge PageRank (influence ranking) ===")
+for eid in sorted(bm.edge_index):
+    pr = edge_pagerank(kc, eid)
+    infl = edge_influence(eid, pr)
+    print(f"  {eid:12s}  spread={infl.spread:.3f}  influence={infl.absolute_influence:.3f}")
+print()
+
+# 6. Inspect the RDF
 print("=== Turtle dump ===")
 print(kc.dump_graph())
 
-# 6. Visualize
-from knowledgecomplex import to_networkx, plot_complex, plot_star
+# 6. Visualize — Hasse diagrams (elements as nodes, boundary as directed arrows)
+from knowledgecomplex import (
+    to_networkx, verify_networkx,
+    plot_hasse, plot_hasse_star, plot_geometric,
+)
 import matplotlib.pyplot as plt
 
-# Full complex — each type gets a distinct color, vertices are largest
-fig, ax = plot_complex(kc, figsize=(12, 9))
-fig.savefig("examples/complex.png", dpi=150, bbox_inches="tight")
-print("Saved examples/complex.png")
+# Export to directed networkx graph and verify invariants
+G = to_networkx(kc)
+verify_networkx(G)
+print(f"DiGraph: {G.number_of_nodes()} nodes, {G.number_of_edges()} directed edges")
+print()
 
-# Star of alice — her neighborhood highlighted, rest dimmed
-fig, ax = plot_star(kc, "alice", figsize=(12, 9))
-fig.savefig("examples/star_alice.png", dpi=150, bbox_inches="tight")
-print("Saved examples/star_alice.png")
+# Hasse diagram — arrows point from faces→edges→vertices (high→low dim)
+fig, ax = plot_hasse(kc, figsize=(12, 9))
+fig.savefig("examples/hasse.png", dpi=150, bbox_inches="tight")
+print("Saved examples/hasse.png")
+plt.close(fig)
 
-plt.show()
+# Hasse star of alice — her neighborhood highlighted
+fig, ax = plot_hasse_star(kc, "alice", figsize=(12, 9))
+fig.savefig("examples/hasse_star_alice.png", dpi=150, bbox_inches="tight")
+print("Saved examples/hasse_star_alice.png")
+plt.close(fig)
+
+# 7. Geometric realization — vertices as 3D points, edges as lines, faces as triangles
+fig, ax = plot_geometric(kc, figsize=(12, 9))
+fig.savefig("examples/geometric.png", dpi=150, bbox_inches="tight")
+print("Saved examples/geometric.png")
+plt.close(fig)

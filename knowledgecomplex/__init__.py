@@ -7,7 +7,12 @@ from knowledgecomplex.graph import KnowledgeComplex, Element
 from knowledgecomplex.filtration import Filtration
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
-from knowledgecomplex.viz import to_networkx, type_color_map, plot_complex, plot_star, plot_skeleton
+from knowledgecomplex.viz import (
+    to_networkx, verify_networkx, type_color_map,
+    plot_hasse, plot_hasse_star, plot_hasse_skeleton,
+    plot_geometric, plot_geometric_interactive,
+    plot_complex, plot_star, plot_skeleton,  # deprecated aliases
+)
 
 try:
     from knowledgecomplex.analysis import (
@@ -45,7 +50,13 @@ __all__ = [
     "load_graph",
     "dump_graph",
     "to_networkx",
+    "verify_networkx",
     "type_color_map",
+    "plot_hasse",
+    "plot_hasse_star",
+    "plot_hasse_skeleton",
+    "plot_geometric",
+    "plot_geometric_interactive",
     "plot_complex",
     "plot_star",
     "plot_skeleton",

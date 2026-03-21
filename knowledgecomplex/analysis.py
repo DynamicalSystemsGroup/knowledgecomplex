@@ -67,6 +67,41 @@ class HodgeAnalysisResults:
 
 
 # ---------------------------------------------------------------------------
+# Weight matrices
+# ---------------------------------------------------------------------------
+
+def _weight_matrices(
+    bm: BoundaryMatrices,
+    weights: dict[str, float] | None,
+) -> tuple[sp.dia_matrix, sp.dia_matrix, sp.dia_matrix]:
+    """Build diagonal weight matrices W₀, W₁, W₂ from a weights dict.
+
+    Returns identity matrices when weights is None. Missing elements
+    default to weight 1.0.
+    """
+    nv = len(bm.vertex_index)
+    ne = len(bm.edge_index)
+    nf = len(bm.face_index)
+
+    if weights is None:
+        return (
+            sp.eye(nv, format="dia"),
+            sp.eye(ne, format="dia"),
+            sp.eye(nf, format="dia"),
+        )
+
+    w0 = np.array([weights.get(bm.index_vertex[i], 1.0) for i in range(nv)])
+    w1 = np.array([weights.get(bm.index_edge[i], 1.0) for i in range(ne)])
+    w2 = np.array([weights.get(bm.index_face[i], 1.0) for i in range(nf)]) if nf > 0 else np.array([])
+
+    return (
+        sp.diags(w0, format="dia") if nv > 0 else sp.eye(0, format="dia"),
+        sp.diags(w1, format="dia") if ne > 0 else sp.eye(0, format="dia"),
+        sp.diags(w2, format="dia") if nf > 0 else sp.eye(0, format="dia"),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Boundary matrices
 # ---------------------------------------------------------------------------
 
@@ -291,21 +326,28 @@ def _matrix_rank(M: sp.csr_matrix, tol: float = 1e-10) -> int:
 def hodge_laplacian(
     kc: "KnowledgeComplex",
     weighted: bool = False,
+    weights: dict[str, float] | None = None,
 ) -> sp.csr_matrix:
     """
     Compute the edge Hodge Laplacian L₁.
 
     Combinatorial (default):
-        L₁ = B1ᵀ B1 + B2 B2ᵀ
+        L₁ = B1ᵀ W₀ B1 + B2 W₂ B2ᵀ
+
+    where W₀ and W₂ are diagonal simplex weight matrices (identity when
+    weights is None).
 
     Degree-weighted:
-        L₁ = B1ᵀ D₀⁻¹ B1 + D₁⁻¹ B2 B2ᵀ
+        L₁ = B1ᵀ D₀⁻¹ W₀ B1 + D₁⁻¹ B2 W₂ B2ᵀ
 
     Parameters
     ----------
     kc : KnowledgeComplex
     weighted : bool
-        If True, use degree-weighted Laplacian.
+        If True, also apply degree normalization.
+    weights : dict[str, float], optional
+        Map from element IDs to scalar weights. Missing elements default
+        to 1.0. Vertex weights enter W₀, face weights enter W₂.
 
     Returns
     -------
@@ -318,10 +360,13 @@ def hodge_laplacian(
     if ne == 0:
         return sp.csr_matrix((0, 0), dtype=np.float64)
 
+    W0, _W1, W2 = _weight_matrices(bm, weights)
+
     if not weighted:
-        down = bm.B1.T @ bm.B1
-        up = bm.B2 @ bm.B2.T if bm.B2.shape[1] > 0 else sp.csr_matrix((ne, ne), dtype=np.float64)
-        return (down + up).tocsr()
+        down = bm.B1.T @ W0 @ bm.B1
+        up = bm.B2 @ W2 @ bm.B2.T if bm.B2.shape[1] > 0 else sp.csr_matrix((ne, ne), dtype=np.float64)
+        L = (down + up).tocsr()
+        return ((L + L.T) / 2).tocsr()
     else:
         # D₀: diagonal vertex degrees
         nv = bm.B1.shape[0]
@@ -336,13 +381,10 @@ def hodge_laplacian(
             edge_face_degrees = np.zeros(ne)
         edge_face_degrees[edge_face_degrees == 0] = 1.0
         D1_inv_sqrt = sp.diags(1.0 / np.sqrt(edge_face_degrees), format="csr")
-        D0_inv_sqrt = sp.diags(1.0 / np.sqrt(vertex_degrees), format="csr")
 
-        # Symmetric form: D₀^{-1/2} B1ᵀ ... uses symmetric normalization
-        down = bm.B1.T @ D0_inv @ bm.B1
-        up = D1_inv_sqrt @ bm.B2 @ bm.B2.T @ D1_inv_sqrt if bm.B2.shape[1] > 0 else sp.csr_matrix((ne, ne), dtype=np.float64)
+        down = bm.B1.T @ D0_inv @ W0 @ bm.B1
+        up = D1_inv_sqrt @ bm.B2 @ W2 @ bm.B2.T @ D1_inv_sqrt if bm.B2.shape[1] > 0 else sp.csr_matrix((ne, ne), dtype=np.float64)
         L = (down + up).tocsr()
-        # Symmetrize to eliminate floating-point asymmetry
         return ((L + L.T) / 2).tocsr()
 
 
@@ -355,6 +397,7 @@ def edge_pagerank(
     edge_id: str,
     beta: float = 0.1,
     weighted: bool = False,
+    weights: dict[str, float] | None = None,
 ) -> np.ndarray:
     """
     Compute personalized edge PageRank for a single edge.
@@ -367,6 +410,8 @@ def edge_pagerank(
     edge_id : str
     beta : float
     weighted : bool
+    weights : dict[str, float], optional
+        Simplex weights (see hodge_laplacian).
 
     Returns
     -------
@@ -374,7 +419,7 @@ def edge_pagerank(
         (n_edges,)
     """
     bm = boundary_matrices(kc)
-    L1 = hodge_laplacian(kc, weighted=weighted)
+    L1 = hodge_laplacian(kc, weighted=weighted, weights=weights)
     ne = L1.shape[0]
 
     A = beta * sp.eye(ne, format="csr") + L1
@@ -388,6 +433,7 @@ def edge_pagerank_all(
     kc: "KnowledgeComplex",
     beta: float = 0.1,
     weighted: bool = False,
+    weights: dict[str, float] | None = None,
 ) -> np.ndarray:
     """
     Compute edge PageRank for all edges via matrix factorization.
@@ -400,13 +446,15 @@ def edge_pagerank_all(
     kc : KnowledgeComplex
     beta : float
     weighted : bool
+    weights : dict[str, float], optional
+        Simplex weights (see hodge_laplacian).
 
     Returns
     -------
     np.ndarray
         (n_edges, n_edges) — column i is the PageRank vector for edge i.
     """
-    L1 = hodge_laplacian(kc, weighted=weighted)
+    L1 = hodge_laplacian(kc, weighted=weighted, weights=weights)
     ne = L1.shape[0]
 
     if ne == 0:
@@ -440,6 +488,7 @@ def _solve_spd(A: sp.csr_matrix, b: np.ndarray) -> np.ndarray:
 def hodge_decomposition(
     kc: "KnowledgeComplex",
     flow: np.ndarray,
+    weights: dict[str, float] | None = None,
 ) -> HodgeDecomposition:
     """
     Decompose an edge flow into gradient + curl + harmonic components.
@@ -447,24 +496,43 @@ def hodge_decomposition(
     flow = gradient + curl + harmonic
 
     where:
-    - gradient ∈ im(B1ᵀ) — vertex-driven flow
-    - curl ∈ im(B2) — face-driven circulation
+    - gradient ∈ im(W₀^{1/2} B1ᵀ) — vertex-driven flow
+    - curl ∈ im(W₂^{1/2} B2) — face-driven circulation
     - harmonic ∈ ker(L₁) — topological cycles
+
+    When weights is None, W₀ and W₂ are identity (standard decomposition).
 
     Parameters
     ----------
     kc : KnowledgeComplex
     flow : np.ndarray
         (n_edges,)
+    weights : dict[str, float], optional
+        Simplex weights. Affects the inner product used for projection.
 
     Returns
     -------
     HodgeDecomposition
     """
     bm = boundary_matrices(kc)
+    W0, _W1, W2 = _weight_matrices(bm, weights)
 
-    gradient = _project_onto_image(bm.B1.T, flow)
-    curl = _project_onto_image(bm.B2, flow)
+    # Weighted projection operators
+    # gradient lives in im(B1ᵀ W₀^{1/2}), curl in im(B2 W₂^{1/2})
+    # but for the orthogonal decomposition with weighted inner product,
+    # we project onto im(B1ᵀ) with W₀-weighted inner product on vertices
+    # Practically: project onto im(sqrt(W₀) B1ᵀ) in standard inner product
+    if weights is not None:
+        w0_sqrt = sp.diags(np.sqrt(np.array(W0.diagonal())), format="csr")
+        w2_sqrt = sp.diags(np.sqrt(np.array(W2.diagonal())), format="csr") if W2.shape[0] > 0 else W2
+        grad_op = w0_sqrt @ bm.B1.T if bm.B1.shape[1] > 0 else bm.B1.T
+        curl_op = bm.B2 @ w2_sqrt if bm.B2.shape[1] > 0 else bm.B2
+    else:
+        grad_op = bm.B1.T
+        curl_op = bm.B2
+
+    gradient = _project_onto_image(grad_op, flow)
+    curl = _project_onto_image(curl_op, flow)
     harmonic = flow - gradient - curl
 
     return HodgeDecomposition(
@@ -531,6 +599,7 @@ def hodge_analysis(
     kc: "KnowledgeComplex",
     beta: float = 0.1,
     weighted: bool = False,
+    weights: dict[str, float] | None = None,
 ) -> HodgeAnalysisResults:
     """
     Run complete Hodge analysis on a knowledge complex.
@@ -543,6 +612,8 @@ def hodge_analysis(
     kc : KnowledgeComplex
     beta : float
     weighted : bool
+    weights : dict[str, float], optional
+        Simplex weights (see hodge_laplacian).
 
     Returns
     -------
@@ -551,14 +622,14 @@ def hodge_analysis(
     bm = boundary_matrices(kc)
     betti = betti_numbers(kc)
     chi = euler_characteristic(kc)
-    L1 = hodge_laplacian(kc, weighted=weighted)
-    pr = edge_pagerank_all(kc, beta=beta, weighted=weighted)
+    L1 = hodge_laplacian(kc, weighted=weighted, weights=weights)
+    pr = edge_pagerank_all(kc, beta=beta, weighted=weighted, weights=weights)
 
     decomps: dict[str, HodgeDecomposition] = {}
     infls: dict[str, EdgeInfluence] = {}
     for eid, idx in bm.edge_index.items():
         pr_vec = pr[:, idx]
-        decomps[eid] = hodge_decomposition(kc, pr_vec)
+        decomps[eid] = hodge_decomposition(kc, pr_vec, weights=weights)
         infls[eid] = edge_influence(eid, pr_vec)
 
     return HodgeAnalysisResults(

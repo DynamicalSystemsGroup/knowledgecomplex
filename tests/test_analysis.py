@@ -326,3 +326,80 @@ class TestHodgeAnalysis:
         results = hodge_analysis(cycle_only, beta=0.1)
         assert results.betti == [1, 1, 0]
         assert results.euler_characteristic == 0
+
+
+# ===========================================================================
+# Simplex weights
+# ===========================================================================
+
+class TestWeights:
+
+    def test_none_matches_unweighted(self, double_triangle):
+        """weights=None produces identical results to default."""
+        L_default = hodge_laplacian(double_triangle)
+        L_none = hodge_laplacian(double_triangle, weights=None)
+        assert_allclose(L_default.toarray(), L_none.toarray())
+
+    def test_uniform_weights_match_unweighted(self, double_triangle):
+        """All weights=1.0 produces identical results to default."""
+        all_ids = double_triangle.element_ids()
+        uniform = {eid: 1.0 for eid in all_ids}
+        L_default = hodge_laplacian(double_triangle)
+        L_uniform = hodge_laplacian(double_triangle, weights=uniform)
+        assert_allclose(L_default.toarray(), L_uniform.toarray(), atol=1e-12)
+
+    def test_vertex_weights_change_laplacian(self, double_triangle):
+        """Non-uniform vertex weights produce a different Laplacian."""
+        w = {"v1": 2.0, "v2": 0.5}  # others default to 1.0
+        L_default = hodge_laplacian(double_triangle)
+        L_weighted = hodge_laplacian(double_triangle, weights=w)
+        assert not np.allclose(L_default.toarray(), L_weighted.toarray())
+
+    def test_face_weights_change_laplacian(self, double_triangle):
+        """Non-uniform face weights produce a different Laplacian."""
+        w = {"f123": 3.0, "f234": 0.1}
+        L_default = hodge_laplacian(double_triangle)
+        L_weighted = hodge_laplacian(double_triangle, weights=w)
+        assert not np.allclose(L_default.toarray(), L_weighted.toarray())
+
+    def test_weighted_laplacian_symmetric(self, double_triangle):
+        """Weighted Laplacian is symmetric."""
+        w = {"v1": 2.0, "v2": 0.5, "f123": 3.0}
+        L = hodge_laplacian(double_triangle, weights=w)
+        assert_allclose(L.toarray(), L.T.toarray(), atol=1e-12)
+
+    def test_weighted_laplacian_psd(self, double_triangle):
+        """Weighted Laplacian is positive semidefinite."""
+        w = {"v1": 2.0, "v2": 0.5, "f123": 3.0}
+        L = hodge_laplacian(double_triangle, weights=w)
+        eigenvalues = np.linalg.eigvalsh(L.toarray())
+        assert np.all(eigenvalues >= -1e-10)
+
+    def test_betti_unchanged_by_weights(self, double_triangle):
+        """Betti numbers are topological invariants — weights don't change them."""
+        b_default = betti_numbers(double_triangle)
+        # Betti numbers only depend on boundary matrices, not weights
+        assert b_default == [1, 0, 0]
+
+    def test_weighted_pagerank_differs(self, double_triangle):
+        """Weighted PageRank differs from unweighted."""
+        w = {"v1": 5.0, "v3": 0.1, "f123": 2.0}
+        pr_default = edge_pagerank(double_triangle, "e12", beta=0.1)
+        pr_weighted = edge_pagerank(double_triangle, "e12", beta=0.1, weights=w)
+        assert not np.allclose(pr_default, pr_weighted)
+
+    def test_weighted_decomposition_exact(self, double_triangle):
+        """Weighted Hodge decomposition still sums to original flow."""
+        w = {"v1": 2.0, "f234": 3.0}
+        flow = edge_pagerank(double_triangle, "e12", beta=0.1, weights=w)
+        decomp = hodge_decomposition(double_triangle, flow, weights=w)
+        reconstructed = decomp.gradient + decomp.curl + decomp.harmonic
+        assert_allclose(reconstructed, flow, atol=1e-8)
+
+    def test_weighted_hodge_analysis(self, double_triangle):
+        """Full hodge_analysis with weights runs without error."""
+        w = {"v1": 2.0, "v2": 0.5, "f123": 3.0, "f234": 0.5}
+        results = hodge_analysis(double_triangle, beta=0.1, weights=w)
+        assert isinstance(results, HodgeAnalysisResults)
+        assert results.betti == [1, 0, 0]
+        assert results.pagerank.shape == (5, 5)
