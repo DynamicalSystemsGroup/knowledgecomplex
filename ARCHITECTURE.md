@@ -238,8 +238,8 @@ This separation is key: the LLM handles ambiguity, intent, and synthesis; the KC
 ## Namespace Conventions
 
 ```turtle
-@prefix kc:   <https://example.org/kc#> .       # core framework
-@prefix kcs:  <https://example.org/kc/shape#> . # core shapes
+@prefix kc:   <https://w3id.org/kc#> .       # core framework
+@prefix kcs:  <https://w3id.org/kc/shape#> . # core shapes
 @prefix aaa:  <https://example.org/aaa#> .      # user namespace (example)
 @prefix aaas: <https://example.org/aaa/shape#> .# user shapes (example)
 ```

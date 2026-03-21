@@ -9,7 +9,7 @@
 #
 # Usage: substitute {simplex} with the IRI of the element.
 
-PREFIX kc: <https://example.org/kc#>
+PREFIX kc: <https://w3id.org/kc#>
 
 SELECT ?coboundary WHERE {
     ?coboundary kc:boundedBy {simplex} .

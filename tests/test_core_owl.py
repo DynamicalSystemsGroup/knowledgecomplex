@@ -10,7 +10,7 @@ import pytest
 from pathlib import Path
 from rdflib import Graph, Namespace, RDF, RDFS, OWL, XSD
 
-KC = Namespace("https://example.org/kc#")
+KC = Namespace("https://w3id.org/kc#")
 _CORE_OWL = Path(__file__).parent.parent / "knowledgecomplex" / "resources" / "kc_core.ttl"
 
 

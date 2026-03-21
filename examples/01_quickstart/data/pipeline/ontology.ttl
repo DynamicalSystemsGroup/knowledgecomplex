@@ -1,5 +1,5 @@
 @prefix ex: <https://example.org/ex#> .
-@prefix kc: <https://example.org/kc#> .
+@prefix kc: <https://w3id.org/kc#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -45,7 +45,7 @@ ex:role a owl:DatatypeProperty ;
     rdfs:domain ex:performs ;
     rdfs:range xsd:string .
 
-<https://example.org/kc> a owl:Ontology ;
+<https://w3id.org/kc> a owl:Ontology ;
     rdfs:label "Knowledge Complex Core Ontology" ;
     rdfs:comment "Abstract topological backbone: Element, Vertex, Edge, Face, Complex." .
 

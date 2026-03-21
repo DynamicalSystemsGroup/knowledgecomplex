@@ -16,9 +16,9 @@
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
-@prefix kc:   <https://example.org/kc#> .
+@prefix kc:   <https://w3id.org/kc#> .
 
-<https://example.org/kc>
+<https://w3id.org/kc>
     a owl:Ontology ;
     rdfs:label "Knowledge Complex Core Ontology" ;
     rdfs:comment "Abstract topological backbone: Element, Vertex, Edge, Face, Complex." .

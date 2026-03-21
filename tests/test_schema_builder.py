@@ -67,7 +67,7 @@ def test_add_vertex_type_writes_owl(basic_schema):
     from rdflib.namespace import RDFS
     from rdflib import URIRef
     color = URIRef("https://example.org/test#Color")
-    kc_vertex = URIRef("https://example.org/kc#Vertex")
+    kc_vertex = URIRef("https://w3id.org/kc#Vertex")
     assert (color, RDFS.subClassOf, kc_vertex) in g
 
 
@@ -87,7 +87,7 @@ def test_add_edge_type_writes_owl(basic_schema):
     from rdflib.namespace import RDFS
     from rdflib import URIRef
     rel = URIRef("https://example.org/test#ColorPair")
-    kc_edge = URIRef("https://example.org/kc#Edge")
+    kc_edge = URIRef("https://w3id.org/kc#Edge")
     assert (rel, RDFS.subClassOf, kc_edge) in g
 
 

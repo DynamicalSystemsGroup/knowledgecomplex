@@ -8,7 +8,7 @@
 # Usage: substitute {simplex} with the IRI of the element.
 #        substitute {type_filter} with a type constraint or empty string.
 
-PREFIX kc:   <https://example.org/kc#>
+PREFIX kc:   <https://w3id.org/kc#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?boundary WHERE {

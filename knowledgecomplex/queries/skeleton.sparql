@@ -8,7 +8,7 @@
 # Usage: substitute {complex} with the IRI of the kc:Complex individual.
 #        substitute {dim_classes} with a UNION of type constraints.
 
-PREFIX kc:   <https://example.org/kc#>
+PREFIX kc:   <https://w3id.org/kc#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?elem WHERE {

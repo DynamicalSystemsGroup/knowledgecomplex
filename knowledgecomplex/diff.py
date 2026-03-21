@@ -33,7 +33,7 @@ from rdflib import Graph, Namespace, URIRef, Literal, RDF, XSD
 if TYPE_CHECKING:
     from knowledgecomplex.graph import KnowledgeComplex
 
-_KC = Namespace("https://example.org/kc#")
+_KC = Namespace("https://w3id.org/kc#")
 
 
 class ComplexDiff:

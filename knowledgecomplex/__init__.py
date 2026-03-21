@@ -2,6 +2,12 @@
 # Internal dependencies: rdflib, pyshacl, owlrl
 # These are never re-exported. The public API is schema.py and graph.py only.
 
+from importlib.metadata import version, PackageNotFoundError
+try:
+    __version__ = version("knowledgecomplex")
+except PackageNotFoundError:
+    __version__ = "unknown"
+
 from knowledgecomplex.schema import SchemaBuilder, vocab, text, TextDescriptor, Codec
 from knowledgecomplex.graph import KnowledgeComplex, Element
 from knowledgecomplex.filtration import Filtration

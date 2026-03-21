@@ -115,7 +115,7 @@ Once your persistent URI is live, use it as your namespace:
 
 ```python
 sb = SchemaBuilder(namespace="mydom")
-# Currently generates: https://example.org/mydom#
+# Currently generates: https://example.org/mydom# (user namespace)
 # For production: update _base_iri to your w3id.org URI
 ```
 

@@ -85,7 +85,7 @@ class TestSchemaOWL:
         g = Graph()
         g.parse(data=qa_schema.dump_owl(), format="turtle")
         doc = URIRef("https://example.org/qa#document")
-        kc_vertex = URIRef("https://example.org/kc#Vertex")
+        kc_vertex = URIRef("https://w3id.org/kc#Vertex")
         assert (doc, RDFS.subClassOf, kc_vertex) in g
 
     def test_child_not_direct_subclass_of_kc_vertex(self, qa_schema):
@@ -93,7 +93,7 @@ class TestSchemaOWL:
         g = Graph()
         g.parse(data=qa_schema.dump_owl(), format="turtle")
         spec = URIRef("https://example.org/qa#specification")
-        kc_vertex = URIRef("https://example.org/kc#Vertex")
+        kc_vertex = URIRef("https://w3id.org/kc#Vertex")
         assert (spec, RDFS.subClassOf, kc_vertex) not in g
 
     def test_guidance_subclass_of_document(self, qa_schema):
@@ -452,7 +452,7 @@ class TestMultiLevel:
         ds = URIRef("https://example.org/deep#detailed_specification")
         spec = URIRef("https://example.org/deep#specification")
         doc = URIRef("https://example.org/deep#document")
-        kc_vertex = URIRef("https://example.org/kc#Vertex")
+        kc_vertex = URIRef("https://w3id.org/kc#Vertex")
 
         assert (ds, RDFS.subClassOf, spec) in g
         assert (spec, RDFS.subClassOf, doc) in g

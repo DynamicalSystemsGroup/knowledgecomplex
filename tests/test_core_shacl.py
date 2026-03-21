@@ -11,7 +11,7 @@ from pathlib import Path
 from rdflib import Graph, Namespace, RDF, Literal, XSD
 import pyshacl
 
-KC = Namespace("https://example.org/kc#")
+KC = Namespace("https://w3id.org/kc#")
 EX = Namespace("https://example.org/test#")
 
 _CORE_OWL    = Path(__file__).parent.parent / "knowledgecomplex" / "resources" / "kc_core.ttl"

@@ -35,8 +35,8 @@
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
-@prefix kc:   <https://example.org/kc#> .
-@prefix kcs:  <https://example.org/kc/shape#> .
+@prefix kc:   <https://w3id.org/kc#> .
+@prefix kcs:  <https://w3id.org/kc/shape#> .
 
 # ---------------------------------------------------------------------------
 # ElementShape — superstructure constraint: kc:uri is optional, at-most-one
@@ -84,7 +84,7 @@ kcs:EdgeShape
         rdfs:comment "Edge boundary vertices must be distinct individuals." ;
         sh:message "Edge boundary vertices must not be the same vertex." ;
         sh:select """
-            PREFIX kc: <https://example.org/kc#>
+            PREFIX kc: <https://w3id.org/kc#>
             SELECT $this WHERE {
                 $this kc:boundedBy ?v .
             }
@@ -128,7 +128,7 @@ kcs:FaceShape
         """ ;
         sh:message "Face boundary edges do not form a closed triangle over shared vertices." ;
         sh:select """
-            PREFIX kc: <https://example.org/kc#>
+            PREFIX kc: <https://w3id.org/kc#>
             SELECT $this WHERE {
                 $this kc:boundedBy ?e1 ;
                       kc:boundedBy ?e2 ;
@@ -179,7 +179,7 @@ kcs:ComplexShape
             each of its boundedBy targets must also be a hasElement of the complex.""" ;
         sh:message "Complex is not closed under the boundary operator: an element's boundary element is missing from the complex." ;
         sh:select """
-            PREFIX kc: <https://example.org/kc#>
+            PREFIX kc: <https://w3id.org/kc#>
             SELECT $this WHERE {
                 $this kc:hasElement ?elem .
                 ?elem kc:boundedBy ?boundary .
