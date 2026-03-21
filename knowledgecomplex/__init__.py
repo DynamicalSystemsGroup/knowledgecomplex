@@ -8,6 +8,7 @@ from knowledgecomplex.filtration import Filtration
 from knowledgecomplex.exceptions import ValidationError, SchemaError, UnknownQueryError
 from knowledgecomplex.io import save_graph, load_graph, dump_graph
 from knowledgecomplex.clique import find_cliques, infer_faces, fill_cliques
+from knowledgecomplex.diff import ComplexDiff, ComplexSequence
 from knowledgecomplex.viz import (
     to_networkx, verify_networkx, type_color_map,
     plot_hasse, plot_hasse_star, plot_hasse_skeleton,
@@ -73,6 +74,8 @@ __all__ = [
     "find_cliques",
     "infer_faces",
     "fill_cliques",
+    "ComplexDiff",
+    "ComplexSequence",
 ]
 
 if _HAS_ANALYSIS:
