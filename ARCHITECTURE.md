@@ -140,6 +140,101 @@ These seams are documented as comments in the relevant `.ttl` files.
 
 ---
 
+## Interoperability: Flexo MMS and OpenMBEE
+
+Because knowledgecomplex stores all data as RDF and enforces constraints via standard W3C technologies (OWL, SHACL, SPARQL), it is natively compatible with [Flexo MMS](https://github.com/Open-MBEE/flexo-mms-deployment) — the Model Management System developed by the [OpenMBEE](https://www.openmbee.org/) community.
+
+### Why the fit is natural
+
+Flexo MMS is a version-controlled model repository that speaks RDF natively. A KC instance graph is already a valid RDF dataset, so the integration path is direct:
+
+| KC concept | MMS equivalent | Notes |
+|---|---|---|
+| `kc:Complex` (instance graph) | MMS model/branch | A KC export is a self-contained RDF graph that can be committed as an MMS model revision |
+| `kc:boundedBy`, `kc:hasElement` | MMS element relationships | Topological structure is expressed as standard RDF triples |
+| SHACL shapes (`kc_core_shapes.ttl` + user shapes) | MMS validation profiles | Shapes can be registered in MMS to enforce KC constraints on committed models |
+| `kc:uri` | MMS element cross-references | Provides traceability from KC elements to external artifacts (files, documents, URIs) |
+| JSON-LD export (`dump_graph(format="json-ld")`) | MMS ingest format | JSON-LD is the primary API format for Flexo MMS |
+
+### Integration patterns
+
+**Push to MMS:** Export a KC instance via `kc.export()` or `dump_graph(format="json-ld")`, then commit to a Flexo MMS repository via its REST API. The OWL ontology and SHACL shapes can be committed alongside the instance data, enabling MMS-side validation.
+
+**Pull from MMS:** Retrieve a model revision as JSON-LD from Flexo MMS, then load it into a KC instance via `load_graph(kc, "model.jsonld")`. The KC's SHACL verification (`kc.verify()`) ensures the imported data satisfies all topological and ontological constraints.
+
+**Version control:** MMS provides branching, diffing, and merge capabilities at the RDF triple level. KC's `ComplexDiff` and `ComplexSequence` classes complement this by providing simplicial-complex-aware diffing (element-level adds/removes rather than triple-level changes).
+
+### What KC adds beyond MMS
+
+Flexo MMS manages RDF models generically — it stores, versions, and queries them but does not enforce simplicial complex structure. KC adds the topological layer: boundary-closure, closed-triangle constraints, typed simplicial hierarchy, and algebraic topology computations (Betti numbers, Hodge decomposition). Together, MMS provides the model management infrastructure and KC provides the mathematical structure.
+
+### Reference
+
+OpenMBEE (Open Model-Based Engineering Environment) is an open-source community developing tools for model-based systems engineering. Flexo MMS is its core model management system. See [openmbee.org](https://www.openmbee.org/) and [github.com/Open-MBEE](https://github.com/Open-MBEE).
+
+---
+
+## Deployment Architecture
+
+The internal design described above (2x2 map, component layers, static resources) is the library's foundation. In practice, a knowledge complex is deployed through a stack of five layers, each building on the one below:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  5. LLM Tool Integration                                    │
+│     Register KC operations as callable tools for a language  │
+│     model. The complex serves as a deterministic expert      │
+│     system — the LLM navigates, queries, and analyzes via    │
+│     tool calls; the KC guarantees topological correctness    │
+│     and returns structured, verifiable results.              │
+├─────────────────────────────────────────────────────────────┤
+│  4. MCP Server                                               │
+│     Model Context Protocol server exposing KC as tools for   │
+│     AI assistants (Claude, etc.). Each KC operation becomes   │
+│     a tool: add_vertex, boundary, betti_numbers, audit, etc. │
+├─────────────────────────────────────────────────────────────┤
+│  3. Microservice (REST API)                                  │
+│     Python-hosted service exposing KC operations over HTTP.   │
+│     CRUD for elements, SPARQL query execution, SHACL         │
+│     verification, algebraic topology analysis, export/import.│
+├─────────────────────────────────────────────────────────────┤
+│  2. Concrete Knowledge Complex                               │
+│     An instance using a specific ontology. Typed vertices,   │
+│     edges, and faces with attributes. SHACL-verified on      │
+│     every write. Serialized as RDF (Turtle, JSON-LD).        │
+│     Versioned via Flexo MMS or git.                          │
+├─────────────────────────────────────────────────────────────┤
+│  1. KC-Compatible Ontology                                   │
+│     OWL class hierarchy extending kc:Vertex/Edge/Face.       │
+│     SHACL shapes for attribute constraints. Publicly hosted  │
+│     at persistent URIs (w3id.org). Dereferenceable — tools   │
+│     can fetch the ontology and understand the type system.    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Layer 1: Ontology
+
+A KC-compatible ontology is an OWL ontology whose classes extend `kc:Vertex`, `kc:Edge`, and `kc:Face`, paired with SHACL shapes for instance-level constraints. Ontologies are authored via `SchemaBuilder` and exported as standard `.ttl` files. For public use, the ontology should be hosted at a persistent URI (e.g. `https://w3id.org/kc/`) so that other systems can dereference the IRI and retrieve the OWL/SHACL definitions. The `knowledgecomplex.ontologies` package ships three reference ontologies (operations, brand, research) as starting points.
+
+### Layer 2: Concrete Complex
+
+A concrete knowledge complex is an RDF instance graph conforming to a specific ontology. It contains typed elements (vertices, edges, faces) with attributes, linked by `kc:boundedBy` and collected by `kc:hasElement`. SHACL verification enforces topological and ontological constraints on every write. The complex is serializable to Turtle, JSON-LD, or N-Triples and can be versioned via Flexo MMS or committed to a git repository as `.ttl` files.
+
+### Layer 3: Microservice
+
+A Python-hosted HTTP service wraps the `KnowledgeComplex` API in a REST interface. Typical endpoints: element CRUD, named SPARQL queries, topological operations (boundary, star, closure), algebraic topology analysis (Betti numbers, Hodge decomposition, edge PageRank), SHACL verification and audit, and schema introspection. The service loads a schema at startup and manages one or more complex instances.
+
+### Layer 4: MCP Server
+
+A [Model Context Protocol](https://modelcontextprotocol.io/) server exposes KC operations as tools that AI assistants can call. Each KC method becomes an MCP tool: `add_vertex`, `boundary`, `find_cliques`, `betti_numbers`, `audit`, etc. The MCP server is a thin adapter over the microservice or the library directly, translating between MCP tool calls and KC Python API calls.
+
+### Layer 5: LLM Tool Integration
+
+The knowledge complex is registered as a set of callable tools for a language model. The LLM uses the complex as a **deterministic expert system** — it navigates the simplicial structure, retrieves typed elements and their attributes, runs topological queries, and performs algebraic topology analysis via tool calls. The KC guarantees that every result is topologically valid and SHACL-verified. The LLM provides natural language understanding and reasoning; the KC provides structured, auditable, mathematically rigorous retrieval.
+
+This separation is key: the LLM handles ambiguity, intent, and synthesis; the KC handles structure, correctness, and computation. Neither replaces the other.
+
+---
+
 ## Namespace Conventions
 
 ```turtle

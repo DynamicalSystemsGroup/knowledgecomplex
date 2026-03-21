@@ -3,8 +3,9 @@
 #
 #   St(sigma) = {tau in K : sigma is a face of tau}
 #
-# Uses the inverse property path ^kc:boundedBy* to walk zero-or-more
-# coboundary hops from sigma upward.
+# Uses kc:boundedBy* from ?star to {simplex}: since boundedBy points
+# downward (high-dim → low-dim), ?star can only reach {simplex} if
+# {simplex} is a face of ?star — exactly the star definition.
 #
 # Usage: substitute {simplex} with the IRI of the element.
 #        substitute {type_filter} with a type constraint or empty string.

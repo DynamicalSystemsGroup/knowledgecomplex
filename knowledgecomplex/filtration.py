@@ -43,6 +43,9 @@ class Filtration:
         self._kc = kc
         self._steps: list[frozenset[str]] = []
 
+    def __repr__(self) -> str:
+        return f"Filtration(steps={len(self._steps)}, complete={self.is_complete})"
+
     @property
     def complex(self) -> "KnowledgeComplex":
         """The parent KnowledgeComplex."""

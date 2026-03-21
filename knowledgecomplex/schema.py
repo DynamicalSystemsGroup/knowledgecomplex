@@ -202,6 +202,9 @@ class SchemaBuilder:
         self._queries: dict[str, str] = {}  # name -> SPARQL template string
         self._init_graphs()
 
+    def __repr__(self) -> str:
+        return f"SchemaBuilder(namespace={self._namespace!r}, types={len(self._types)})"
+
     def _init_graphs(self) -> None:
         """Load core OWL and SHACL static resources into internal graphs."""
         self._owl_graph = Graph()

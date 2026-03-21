@@ -36,6 +36,10 @@ class BoundaryMatrices:
     index_edge: dict[int, str]
     index_face: dict[int, str]
 
+    def __repr__(self) -> str:
+        return (f"BoundaryMatrices(vertices={len(self.vertex_index)}, "
+                f"edges={len(self.edge_index)}, faces={len(self.face_index)})")
+
 
 @dataclass
 class HodgeDecomposition:
@@ -63,6 +67,9 @@ class SweepCut:
     volume: int
     boundary_edges: int
 
+    def __repr__(self) -> str:
+        return f"SweepCut(vertices={len(self.vertices)}, conductance={self.conductance:.4f})"
+
 
 @dataclass
 class EdgeSweepCut:
@@ -70,6 +77,9 @@ class EdgeSweepCut:
     edges: set[str]
     conductance: float
     volume: int
+
+    def __repr__(self) -> str:
+        return f"EdgeSweepCut(edges={len(self.edges)}, conductance={self.conductance:.4f})"
 
 
 @dataclass
@@ -82,6 +92,10 @@ class HodgeAnalysisResults:
     pagerank: np.ndarray  # (n_edges, n_edges)
     decompositions: dict[str, HodgeDecomposition]
     influences: dict[str, EdgeInfluence]
+
+    def __repr__(self) -> str:
+        ne = len(self.decompositions)
+        return f"HodgeAnalysisResults(betti={self.betti}, edges={ne})"
 
 
 # ---------------------------------------------------------------------------

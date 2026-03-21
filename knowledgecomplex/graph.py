@@ -96,6 +96,13 @@ class Element:
         self._id = id
         self._iri = URIRef(f"{kc._schema._base_iri}{id}")
 
+    def __repr__(self) -> str:
+        try:
+            t = self.type
+        except ValueError:
+            t = "?"
+        return f"Element({self._id!r}, type={t!r})"
+
     @property
     def id(self) -> str:
         return self._id
@@ -212,6 +219,10 @@ class KnowledgeComplex:
         self._codecs: dict[str, Codec] = {}
         self._defer_verification = False
         self._init_graph()
+
+    def __repr__(self) -> str:
+        n = len(self.element_ids())
+        return f"KnowledgeComplex(namespace={self._schema._namespace!r}, elements={n})"
 
     def _init_graph(self) -> None:
         """
@@ -851,7 +862,11 @@ class KnowledgeComplex:
         return self._ids_from_query(sparql)
 
     def coboundary(self, id: str, *, type: str | None = None) -> set[str]:
-        """Return δ(id): all simplices whose boundary contains id.
+        """Return the cofaces of id: all simplices whose boundary contains id.
+
+        Computes {τ ∈ K : id ∈ ∂(τ)} — the set of (k+1)-simplices that
+        have id as a boundary element.  This is the combinatorial coface
+        relation, not the algebraic coboundary operator δ on cochains.
 
         Parameters
         ----------
