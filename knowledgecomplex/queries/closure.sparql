@@ -1,0 +1,18 @@
+# knowledgecomplex/queries/closure.sparql
+# Closure operator: smallest subcomplex containing sigma.
+#
+#   Cl({sigma}) = sigma plus all faces of sigma (transitive boundary).
+#
+# Uses the forward property path kc:boundedBy* to walk zero-or-more
+# boundary hops from sigma downward.
+#
+# Usage: substitute {simplex} with the IRI of the element.
+#        substitute {type_filter} with a type constraint or empty string.
+
+PREFIX kc:   <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?closure WHERE {
+    {simplex} kc:boundedBy* ?closure .
+    {type_filter}
+}

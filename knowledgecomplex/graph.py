@@ -30,14 +30,17 @@ to an actual document file (e.g. file:///path/to/doc.md).
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from knowledgecomplex.audit import AuditReport
 
 import pandas as pd
 import pyshacl
 from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS, OWL, XSD
 
-from knowledgecomplex.exceptions import ValidationError, UnknownQueryError
-from knowledgecomplex.schema import SchemaBuilder
+from knowledgecomplex.exceptions import ValidationError, UnknownQueryError, SchemaError
+from knowledgecomplex.schema import SchemaBuilder, Codec
 
 _FRAMEWORK_QUERIES_DIR = Path(__file__).parent / "queries"
 
@@ -60,6 +63,112 @@ def _load_query_templates(
         for path in d.glob("*.sparql"):
             templates[path.stem] = path.read_text()
     return templates
+
+
+class _DeferredVerification:
+    """Context manager that suppresses per-write SHACL, verifies on exit."""
+
+    def __init__(self, kc: "KnowledgeComplex") -> None:
+        self._kc = kc
+
+    def __enter__(self) -> "KnowledgeComplex":
+        self._kc._defer_verification = True
+        return self._kc
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self._kc._defer_verification = False
+        if exc_type is None:
+            self._kc.verify()
+        return None
+
+
+class Element:
+    """
+    Lightweight proxy for an element in a KnowledgeComplex.
+
+    Provides read-only access to element properties and compile/decompile
+    methods that delegate to the codec registered for this element's type.
+    Properties read live from the instance graph on each access.
+    """
+
+    def __init__(self, kc: "KnowledgeComplex", id: str) -> None:
+        self._kc = kc
+        self._id = id
+        self._iri = URIRef(f"{kc._schema._base_iri}{id}")
+
+    def __repr__(self) -> str:
+        try:
+            t = self.type
+        except ValueError:
+            t = "?"
+        return f"Element({self._id!r}, type={t!r})"
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def type(self) -> str:
+        ns_str = self._kc._schema._base_iri
+        for _, _, o in self._kc._instance_graph.triples((self._iri, RDF.type, None)):
+            type_str = str(o)
+            if type_str.startswith(ns_str):
+                return type_str[len(ns_str):]
+        raise ValueError(f"Element '{self._id}' has no user type")
+
+    @property
+    def uri(self) -> str | None:
+        obj = self._kc._instance_graph.value(self._iri, _KC.uri)
+        return str(obj) if obj is not None else None
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        ns_str = self._kc._schema._base_iri
+        attrs: dict[str, Any] = {}
+        for _, p, o in self._kc._instance_graph.triples((self._iri, None, None)):
+            p_str = str(p)
+            if p_str.startswith(ns_str):
+                attr_name = p_str[len(ns_str):]
+                attrs[attr_name] = str(o)
+        return attrs
+
+    def compile(self) -> None:
+        """Write this element's record to the artifact at its URI."""
+        codec = self._kc._resolve_codec(self.type)
+        uri = self.uri
+        if uri is None:
+            raise ValueError(f"Element '{self._id}' has no kc:uri — cannot compile")
+        element_dict = {"id": self._id, "type": self.type, "uri": uri, **self.attrs}
+        codec.compile(element_dict)
+
+    def decompile(self) -> None:
+        """Read the artifact at this element's URI and update attributes."""
+        codec = self._kc._resolve_codec(self.type)
+        uri = self.uri
+        if uri is None:
+            raise ValueError(f"Element '{self._id}' has no kc:uri — cannot decompile")
+        new_attrs = codec.decompile(uri)
+
+        # Remove existing model-namespace attribute triples
+        ns_str = self._kc._schema._base_iri
+        to_remove = []
+        for s, p, o in self._kc._instance_graph.triples((self._iri, None, None)):
+            if str(p).startswith(ns_str):
+                to_remove.append((s, p, o))
+        for triple in to_remove:
+            self._kc._instance_graph.remove(triple)
+
+        # Add new attribute triples
+        for attr_name, attr_value in new_attrs.items():
+            attr_iri = self._kc._ns[attr_name]
+            if isinstance(attr_value, (list, tuple)):
+                for v in attr_value:
+                    self._kc._instance_graph.add((self._iri, attr_iri, Literal(v)))
+            else:
+                self._kc._instance_graph.add((self._iri, attr_iri, Literal(attr_value)))
+
+        # Re-validate
+        self._kc._validate(self._id)
 
 
 class KnowledgeComplex:
@@ -107,7 +216,13 @@ class KnowledgeComplex:
         self._instance_graph: Any = None  # rdflib.Graph, populated in _init_graph()
         self._complex_iri: Any = None     # URIRef for the kc:Complex individual
         self._ns = schema._ns
+        self._codecs: dict[str, Codec] = {}
+        self._defer_verification = False
         self._init_graph()
+
+    def __repr__(self) -> str:
+        n = len(self.element_ids())
+        return f"KnowledgeComplex(namespace={self._schema._namespace!r}, elements={n})"
 
     def _init_graph(self) -> None:
         """
@@ -144,20 +259,22 @@ class KnowledgeComplex:
         """
         Run pyshacl against the current instance graph.
 
-        Validates both element-level shapes (EdgeShape, FaceShape) and
-        complex-level shapes (ComplexShape boundary-closure).
+        Skipped when deferred_verification() context manager is active.
 
         Parameters
         ----------
         focus_node_id : str, optional
             If provided, used in the error message to identify which element
-            triggered the failure. Validation always covers the entire graph.
+            triggered the failure.
 
         Raises
         ------
         ValidationError
-            If validation fails. report attribute contains human-readable text.
+            If verification fails. report attribute contains human-readable text.
         """
+        if self._defer_verification:
+            return
+
         conforms, _, results_text = pyshacl.validate(
             data_graph=self._instance_graph,
             shacl_graph=self._shacl_graph,
@@ -170,6 +287,71 @@ class KnowledgeComplex:
             if focus_node_id:
                 msg += f" (after adding '{focus_node_id}')"
             raise ValidationError(msg, report=results_text)
+
+    def verify(self) -> None:
+        """
+        Run SHACL verification on the current instance graph.
+
+        Checks all topological and ontological constraints. Raises on failure.
+        Use :meth:`audit` for a non-throwing alternative.
+
+        Raises
+        ------
+        ValidationError
+            If any SHACL constraint is violated.
+        """
+        # Bypass the deferral flag — verify() is an explicit user request
+        conforms, _, results_text = pyshacl.validate(
+            data_graph=self._instance_graph,
+            shacl_graph=self._shacl_graph,
+            ont_graph=self._ont_graph,
+            inference="rdfs",
+            abort_on_first=False,
+        )
+        if not conforms:
+            raise ValidationError("SHACL verification failed", report=results_text)
+
+    def audit(self) -> "AuditReport":
+        """
+        Run SHACL verification and return a structured report.
+
+        Unlike :meth:`verify`, this never raises — it returns an
+        :class:`~knowledgecomplex.audit.AuditReport` with ``conforms``,
+        ``violations``, and ``text`` fields.
+
+        Returns
+        -------
+        AuditReport
+        """
+        from knowledgecomplex.audit import _build_report
+        conforms, _, results_text = pyshacl.validate(
+            data_graph=self._instance_graph,
+            shacl_graph=self._shacl_graph,
+            ont_graph=self._ont_graph,
+            inference="rdfs",
+            abort_on_first=False,
+        )
+        return _build_report(conforms, results_text, self._schema._namespace)
+
+    def deferred_verification(self) -> "_DeferredVerification":
+        """
+        Context manager that suppresses per-write SHACL verification.
+
+        Inside the context, ``add_vertex``, ``add_edge``, and ``add_face``
+        skip SHACL checks. On exit, a single verification pass runs over
+        the entire graph. If verification fails, ``ValidationError`` is raised.
+
+        This is much faster for bulk construction — one SHACL pass instead
+        of one per element.
+
+        Example
+        -------
+        >>> with kc.deferred_verification():
+        ...     kc.add_vertex("v1", type="Node")
+        ...     kc.add_vertex("v2", type="Node")
+        ...     kc.add_edge("e1", type="Link", vertices={"v1", "v2"})
+        """
+        return _DeferredVerification(self)
 
     def _assert_element(
         self,
@@ -347,6 +529,38 @@ class KnowledgeComplex:
             raise ValueError(f"add_face requires exactly 3 boundary edges; got {len(boundary)}")
         self._assert_element(id, type, boundary_ids=boundary, attributes=attributes, uri=uri)
 
+    def remove_element(self, id: str) -> None:
+        """Remove an element and all its triples from the complex.
+
+        Removes the element's type assertion, boundary relations (both
+        directions), attributes, kc:uri, and kc:hasElement membership.
+
+        No validation is performed after removal — the caller is responsible
+        for ensuring the resulting complex is valid (e.g. removing faces
+        before their boundary edges).
+
+        Parameters
+        ----------
+        id : str
+            Element identifier to remove.
+
+        Raises
+        ------
+        ValueError
+            If no element with that ID exists.
+        """
+        iri = URIRef(f"{self._schema._base_iri}{id}")
+        if (iri, RDF.type, None) not in self._instance_graph:
+            raise ValueError(f"No element with id '{id}' in the complex")
+
+        # Remove all triples where element is subject
+        for s, p, o in list(self._instance_graph.triples((iri, None, None))):
+            self._instance_graph.remove((s, p, o))
+
+        # Remove all triples where element is object (coboundary, hasElement)
+        for s, p, o in list(self._instance_graph.triples((None, None, iri))):
+            self._instance_graph.remove((s, p, o))
+
     def query(self, template_name: str, **kwargs: Any) -> pd.DataFrame:
         """
         Execute a named SPARQL template and return results as a DataFrame.
@@ -376,6 +590,10 @@ class KnowledgeComplex:
             )
         sparql = self._query_templates[template_name]
 
+        # Substitute {placeholder} tokens with kwargs values
+        for key, value in kwargs.items():
+            sparql = sparql.replace(f"{{{key}}}", str(value))
+
         # Provide namespace bindings for queries that may not declare all prefixes
         init_ns = {
             "kc": _KC,
@@ -392,6 +610,39 @@ class KnowledgeComplex:
         for row in results:
             rows.append([str(val) if val is not None else None for val in row])
         return pd.DataFrame(rows, columns=columns)
+
+    def query_ids(self, template_name: str, **kwargs: Any) -> set[str]:
+        """Execute a named SPARQL template and return the first column as element IDs.
+
+        Like :meth:`query` but returns a ``set[str]`` of element IDs
+        (namespace prefix stripped) instead of a DataFrame.  Useful for
+        obtaining subcomplexes from parameterized queries.
+
+        Parameters
+        ----------
+        template_name : str
+            Name of a registered query template.
+        **kwargs : Any
+            Substitution values for ``{placeholder}`` tokens in the template.
+
+        Returns
+        -------
+        set[str]
+
+        Raises
+        ------
+        UnknownQueryError
+            If template_name is not registered.
+        """
+        if template_name not in self._query_templates:
+            raise UnknownQueryError(
+                f"No query template named '{template_name}'. "
+                f"Available: {sorted(self._query_templates)}"
+            )
+        sparql = self._query_templates[template_name]
+        for key, value in kwargs.items():
+            sparql = sparql.replace(f"{{{key}}}", str(value))
+        return self._ids_from_query(sparql)
 
     def dump_graph(self) -> str:
         """Return the instance graph as a Turtle string."""
@@ -445,3 +696,412 @@ class KnowledgeComplex:
         if instance_file.exists():
             kc._instance_graph.parse(str(instance_file), format="turtle")
         return kc
+
+    # --- Element handles and listing ---
+
+    def element(self, id: str) -> Element:
+        """
+        Get an Element handle for the given element ID.
+
+        Parameters
+        ----------
+        id : str
+            Local identifier of the element.
+
+        Returns
+        -------
+        Element
+
+        Raises
+        ------
+        ValueError
+            If no element with that ID exists in the graph.
+        """
+        iri = URIRef(f"{self._schema._base_iri}{id}")
+        if (iri, RDF.type, None) not in self._instance_graph:
+            raise ValueError(f"No element with id '{id}' in the complex")
+        return Element(self, id)
+
+    def element_ids(self, type: str | None = None) -> list[str]:
+        """
+        List element IDs, optionally filtered by type (includes subtypes).
+
+        Parameters
+        ----------
+        type : str, optional
+            Filter to elements of this type or any subtype.
+
+        Returns
+        -------
+        list[str]
+        """
+        ns_str = self._schema._base_iri
+        if type is not None:
+            if type not in self._schema._types:
+                raise SchemaError(f"Type '{type}' is not registered")
+            type_iri = self._ns[type]
+            # Use SPARQL with subClassOf* to include subtypes
+            sparql = f"""
+            SELECT ?elem WHERE {{
+                ?elem a/rdfs:subClassOf* <{type_iri}> .
+                <{self._complex_iri}> <https://example.org/kc#hasElement> ?elem .
+            }}
+            """
+            results = self._instance_graph.query(
+                sparql, initNs={"rdfs": RDFS, "rdf": RDF}
+            )
+            ids = []
+            for row in results:
+                elem_str = str(row[0])
+                if elem_str.startswith(ns_str):
+                    ids.append(elem_str[len(ns_str):])
+            return sorted(ids)
+        else:
+            # All elements in the complex
+            ids = []
+            for _, _, o in self._instance_graph.triples(
+                (self._complex_iri, _KC.hasElement, None)
+            ):
+                elem_str = str(o)
+                if elem_str.startswith(ns_str):
+                    ids.append(elem_str[len(ns_str):])
+            return sorted(ids)
+
+    def elements(self, type: str | None = None) -> list[Element]:
+        """
+        List Element handles, optionally filtered by type (includes subtypes).
+
+        Parameters
+        ----------
+        type : str, optional
+            Filter to elements of this type or any subtype.
+
+        Returns
+        -------
+        list[Element]
+        """
+        return [Element(self, id) for id in self.element_ids(type=type)]
+
+    def is_subcomplex(self, ids: set[str]) -> bool:
+        """
+        Check whether a set of element IDs forms a valid subcomplex.
+
+        A set is a valid subcomplex iff it is closed under the boundary
+        operator: for every element in the set, all its boundary elements
+        are also in the set.
+
+        Parameters
+        ----------
+        ids : set[str]
+            Element identifiers to check.
+
+        Returns
+        -------
+        bool
+        """
+        if not ids:
+            return True
+        return set(ids) == self.closure(ids)
+
+    # --- Topological query helpers ---
+
+    def _iri(self, id: str) -> str:
+        """Return the full IRI string for an element ID."""
+        return f"{self._schema._base_iri}{id}"
+
+    def _type_filter_clause(self, var: str, type: str | None) -> str:
+        """Return a SPARQL clause filtering ?var by type, or empty string."""
+        if type is None:
+            return ""
+        if type not in self._schema._types:
+            raise SchemaError(f"Type '{type}' is not registered")
+        type_iri = self._ns[type]
+        return f"?{var} a/rdfs:subClassOf* <{type_iri}> ."
+
+    def _ids_from_query(self, sparql: str) -> set[str]:
+        """Execute SPARQL and return the first column as a set of element IDs."""
+        ns_str = self._schema._base_iri
+        init_ns = {
+            "kc": _KC, "rdf": RDF, "rdfs": RDFS,
+            "owl": OWL, "xsd": XSD,
+            self._schema._namespace: self._ns,
+        }
+        results = self._instance_graph.query(sparql, initNs=init_ns)
+        ids: set[str] = set()
+        for row in results:
+            val = str(row[0])
+            if val.startswith(ns_str):
+                ids.add(val[len(ns_str):])
+        return ids
+
+    # --- Topological query methods ---
+
+    def boundary(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return ∂(id): the direct faces of element id via kc:boundedBy.
+
+        For a vertex, returns the empty set.
+        For an edge, returns its 2 boundary vertices.
+        For a face, returns its 3 boundary edges.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        sparql = (
+            self._query_templates["boundary"]
+            .replace("{simplex}", f"<{self._iri(id)}>")
+            .replace("{type_filter}", self._type_filter_clause("boundary", type))
+        )
+        return self._ids_from_query(sparql)
+
+    def coboundary(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return the cofaces of id: all simplices whose boundary contains id.
+
+        Computes {τ ∈ K : id ∈ ∂(τ)} — the set of (k+1)-simplices that
+        have id as a boundary element.  This is the combinatorial coface
+        relation, not the algebraic coboundary operator δ on cochains.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        tf = self._type_filter_clause("coboundary", type)
+        sparql = f"""\
+PREFIX kc: <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?coboundary WHERE {{
+    ?coboundary kc:boundedBy <{self._iri(id)}> .
+    {tf}
+}}"""
+        return self._ids_from_query(sparql)
+
+    def star(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return St(id): all simplices containing id as a face (transitive coboundary + self).
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        sparql = (
+            self._query_templates["star"]
+            .replace("{simplex}", f"<{self._iri(id)}>")
+            .replace("{type_filter}", self._type_filter_clause("star", type))
+        )
+        return self._ids_from_query(sparql)
+
+    def closure(self, ids: str | set[str], *, type: str | None = None) -> set[str]:
+        """Return Cl(ids): the smallest subcomplex containing ids.
+
+        Accepts a single ID or a set of IDs. When given a set, returns the
+        union of closures.
+
+        Parameters
+        ----------
+        ids : str or set[str]
+            Element identifier(s).
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        if isinstance(ids, str):
+            sparql = (
+                self._query_templates["closure"]
+                .replace("{simplex}", f"<{self._iri(ids)}>")
+                .replace("{type_filter}", self._type_filter_clause("closure", type))
+            )
+            return self._ids_from_query(sparql)
+        # Set input: use VALUES clause
+        values = " ".join(f"(<{self._iri(i)}>)" for i in ids)
+        tf = self._type_filter_clause("closure", type)
+        sparql = f"""\
+PREFIX kc: <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?closure WHERE {{
+    VALUES (?sigma) {{ {values} }}
+    ?sigma kc:boundedBy* ?closure .
+    {tf}
+}}"""
+        return self._ids_from_query(sparql)
+
+    def closed_star(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return Cl(St(id)): the closure of the star.
+
+        Always a valid subcomplex.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        return self.closure(self.star(id), type=type)
+
+    def link(self, id: str, *, type: str | None = None) -> set[str]:
+        """Return Lk(id): Cl(St(id)) \\ St(id).
+
+        The link is the set of simplices in the closed star that do not
+        themselves contain id as a face.
+
+        Parameters
+        ----------
+        id : str
+            Element identifier.
+        type : str, optional
+            Filter results to this type (including subtypes).
+
+        Returns
+        -------
+        set[str]
+        """
+        result = self.closed_star(id) - self.star(id)
+        if type is not None:
+            typed = set(self.element_ids(type=type))
+            result &= typed
+        return result
+
+    def skeleton(self, k: int) -> set[str]:
+        """Return sk_k(K): all elements of dimension <= k.
+
+        k=0: vertices only
+        k=1: vertices and edges
+        k=2: vertices, edges, and faces (everything)
+
+        Parameters
+        ----------
+        k : int
+            Maximum dimension (0, 1, or 2).
+
+        Returns
+        -------
+        set[str]
+
+        Raises
+        ------
+        ValueError
+            If k < 0 or k > 2.
+        """
+        if k < 0 or k > 2:
+            raise ValueError(f"skeleton dimension must be 0, 1, or 2; got {k}")
+        dim_classes_map = {
+            0: [_KC.Vertex],
+            1: [_KC.Vertex, _KC.Edge],
+            2: [_KC.Vertex, _KC.Edge, _KC.Face],
+        }
+        classes = dim_classes_map[k]
+        unions = " UNION ".join(
+            f"{{ ?elem a/rdfs:subClassOf* <{c}> }}" for c in classes
+        )
+        sparql = (
+            self._query_templates["skeleton"]
+            .replace("{complex}", f"<{self._complex_iri}>")
+            .replace("{dim_classes}", unions)
+        )
+        return self._ids_from_query(sparql)
+
+    def degree(self, id: str) -> int:
+        """Return deg(id): the number of edges incident to vertex id.
+
+        Parameters
+        ----------
+        id : str
+            Vertex identifier.
+
+        Returns
+        -------
+        int
+        """
+        sparql = (
+            self._query_templates["degree"]
+            .replace("{simplex}", f"<{self._iri(id)}>")
+        )
+        init_ns = {
+            "kc": _KC, "rdf": RDF, "rdfs": RDFS,
+            "owl": OWL, "xsd": XSD,
+            self._schema._namespace: self._ns,
+        }
+        results = self._instance_graph.query(sparql, initNs=init_ns)
+        for row in results:
+            return int(row[0])
+        return 0
+
+    # --- Codec registration and resolution ---
+
+    def register_codec(self, type_name: str, codec: Codec) -> None:
+        """
+        Register a codec for the given type.
+
+        Parameters
+        ----------
+        type_name : str
+            Must be a registered type in the schema.
+        codec : Codec
+            Object implementing compile() and decompile().
+        """
+        if type_name not in self._schema._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+        if not isinstance(codec, Codec):
+            raise TypeError(
+                f"Expected a Codec instance, got {type(codec).__name__}"
+            )
+        self._codecs[type_name] = codec
+
+    def _resolve_codec(self, type_name: str) -> Codec:
+        """Walk type hierarchy to find the nearest registered codec."""
+        current: str | None = type_name
+        while current is not None:
+            if current in self._codecs:
+                return self._codecs[current]
+            current = self._schema._types.get(current, {}).get("parent")
+        raise SchemaError(
+            f"No codec registered for type '{type_name}' or any of its ancestors"
+        )
+
+    def decompile_uri(self, type_name: str, uri: str) -> dict:
+        """
+        Decompile an artifact at a URI without adding it to the graph.
+
+        Parameters
+        ----------
+        type_name : str
+            The element type (used to resolve the codec).
+        uri : str
+            URI of the artifact to read.
+
+        Returns
+        -------
+        dict
+            Attribute key-value pairs.
+        """
+        if type_name not in self._schema._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+        codec = self._resolve_codec(type_name)
+        return codec.decompile(uri)

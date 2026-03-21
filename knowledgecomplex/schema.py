@@ -17,9 +17,9 @@ dump_owl() and dump_shacl() return merged (core + user) Turtle strings.
 
 from __future__ import annotations
 import shutil
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 # rdflib is an internal implementation detail.
 # Do not re-export any rdflib types through the public API.
@@ -34,6 +34,44 @@ _CORE_SHAPES = _RESOURCES / "kc_core_shapes.ttl"
 _KC = Namespace("https://example.org/kc#")
 _KCS = Namespace("https://example.org/kc/shape#")
 _SH = Namespace("http://www.w3.org/ns/shacl#")
+
+
+@runtime_checkable
+class Codec(Protocol):
+    """
+    Bidirectional bridge between element records and artifacts at URIs.
+
+    A codec pairs compile (map → territory) and decompile (territory → map)
+    for a given element type. Registered on KnowledgeComplex instances via
+    register_codec(), and inherited by child types.
+    """
+
+    def compile(self, element: dict) -> None:
+        """
+        Write an element record to the artifact at its URI.
+
+        Parameters
+        ----------
+        element : dict
+            Keys: id, type, uri, plus all attribute key-value pairs.
+        """
+        ...
+
+    def decompile(self, uri: str) -> dict:
+        """
+        Read the artifact at a URI and return an attribute dict.
+
+        Parameters
+        ----------
+        uri : str
+            The URI of the artifact to read.
+
+        Returns
+        -------
+        dict
+            Attribute key-value pairs suitable for add_vertex/add_edge/add_face kwargs.
+        """
+        ...
 
 
 @dataclass(frozen=True)
@@ -161,7 +199,11 @@ class SchemaBuilder:
         self._shacl_graph: Any = None # rdflib.Graph, populated in _init_graphs()
         self._types: dict[str, dict] = {}  # registry: name -> {kind, attributes}
         self._attr_domains: dict[str, URIRef | None] = {}  # attr name → first domain or None if shared
+        self._queries: dict[str, str] = {}  # name -> SPARQL template string
         self._init_graphs()
+
+    def __repr__(self) -> str:
+        return f"SchemaBuilder(namespace={self._namespace!r}, types={len(self._types)})"
 
     def _init_graphs(self) -> None:
         """Load core OWL and SHACL static resources into internal graphs."""
@@ -301,10 +343,71 @@ class SchemaBuilder:
         else:
             raise TypeError(f"Unknown attribute spec type: {type(attr_spec)}")
 
+    def _validate_parent(self, parent: str | None, expected_kind: str) -> None:
+        """Validate parent type exists and has the correct kind."""
+        from knowledgecomplex.exceptions import SchemaError
+        if parent is None:
+            return
+        if parent not in self._types:
+            raise SchemaError(f"Parent type '{parent}' is not registered")
+        if self._types[parent]["kind"] != expected_kind:
+            raise SchemaError(
+                f"Parent type '{parent}' is kind '{self._types[parent]['kind']}', "
+                f"expected '{expected_kind}'"
+            )
+
+    def _collect_inherited_attributes(self, type_name: str) -> dict:
+        """Walk the parent chain and collect all inherited attributes."""
+        inherited = {}
+        current = self._types[type_name].get("parent")
+        while current is not None:
+            parent_attrs = self._types[current].get("attributes", {})
+            # Earlier ancestors are overridden by closer ancestors
+            for k, v in parent_attrs.items():
+                if k not in inherited:
+                    inherited[k] = v
+            current = self._types[current].get("parent")
+        return inherited
+
+    def _validate_bind(
+        self,
+        bind: dict[str, str],
+        all_attributes: dict,
+    ) -> None:
+        """Validate that bind keys exist in all_attributes and values are legal."""
+        from knowledgecomplex.exceptions import SchemaError
+        for attr_name, bound_value in bind.items():
+            if attr_name not in all_attributes:
+                raise SchemaError(
+                    f"Cannot bind '{attr_name}': attribute not found on this type or its ancestors"
+                )
+            descriptor = all_attributes[attr_name]
+            # Unwrap dict-style descriptors
+            if isinstance(descriptor, dict):
+                descriptor = descriptor.get("vocab") or descriptor.get("text")
+            if isinstance(descriptor, VocabDescriptor):
+                if bound_value not in descriptor.values:
+                    raise SchemaError(
+                        f"Cannot bind '{attr_name}' to '{bound_value}': "
+                        f"not in allowed values {descriptor.values}"
+                    )
+
+    def _apply_bind(self, shape_iri: URIRef, bind: dict[str, str]) -> None:
+        """Add sh:hasValue + sh:minCount 1 constraints for bound attributes."""
+        for attr_name, bound_value in bind.items():
+            attr_iri = self._ns[attr_name]
+            prop_shape = BNode()
+            self._shacl_graph.add((shape_iri, _SH.property, prop_shape))
+            self._shacl_graph.add((prop_shape, _SH.path, attr_iri))
+            self._shacl_graph.add((prop_shape, _SH.hasValue, Literal(bound_value)))
+            self._shacl_graph.add((prop_shape, _SH.minCount, Literal(1)))
+
     def add_vertex_type(
         self,
         name: str,
         attributes: dict[str, VocabDescriptor | TextDescriptor | Any] | None = None,
+        parent: str | None = None,
+        bind: dict[str, str] | None = None,
     ) -> "SchemaBuilder":
         """
         Declare a new vertex type (OWL subclass of KC:Vertex + SHACL node shape).
@@ -316,6 +419,10 @@ class SchemaBuilder:
         attributes : dict, optional
             Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
             or dict with "vocab"/"text" key and optional "required" flag).
+        parent : str, optional
+            Name of a registered vertex type to inherit from.
+        bind : dict, optional
+            Mapping of attribute names to fixed string values (sh:hasValue).
 
         Returns
         -------
@@ -324,14 +431,30 @@ class SchemaBuilder:
         from knowledgecomplex.exceptions import SchemaError
         if name in self._types:
             raise SchemaError(f"Type '{name}' is already registered")
+        self._validate_parent(parent, "vertex")
         attributes = attributes or {}
-        self._types[name] = {"kind": "vertex", "attributes": dict(attributes)}
+        bind = bind or {}
+
+        self._types[name] = {
+            "kind": "vertex",
+            "attributes": dict(attributes),
+            "parent": parent,
+            "bind": dict(bind),
+        }
+
+        # Validate bind against all attributes (own + inherited)
+        if bind:
+            inherited = self._collect_inherited_attributes(name)
+            all_attrs = {**inherited, **attributes}
+            self._validate_bind(bind, all_attrs)
+
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
 
         # OWL
+        superclass = self._ns[parent] if parent else _KC.Vertex
         self._owl_graph.add((type_iri, RDF.type, OWL.Class))
-        self._owl_graph.add((type_iri, RDFS.subClassOf, _KC.Vertex))
+        self._owl_graph.add((type_iri, RDFS.subClassOf, superclass))
 
         # SHACL
         self._shacl_graph.add((shape_iri, RDF.type, _SH.NodeShape))
@@ -340,12 +463,17 @@ class SchemaBuilder:
         for attr_name, attr_spec in attributes.items():
             self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
+        if bind:
+            self._apply_bind(shape_iri, bind)
+
         return self
 
     def add_edge_type(
         self,
         name: str,
         attributes: dict[str, VocabDescriptor | TextDescriptor | Any] | None = None,
+        parent: str | None = None,
+        bind: dict[str, str] | None = None,
     ) -> "SchemaBuilder":
         """
         Declare a new edge type (OWL subclass of KC:Edge + SHACL property shapes).
@@ -357,6 +485,10 @@ class SchemaBuilder:
         attributes : dict, optional
             Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
             or dict with "vocab"/"text" key and optional "required" flag).
+        parent : str, optional
+            Name of a registered edge type to inherit from.
+        bind : dict, optional
+            Mapping of attribute names to fixed string values (sh:hasValue).
 
         Returns
         -------
@@ -365,14 +497,29 @@ class SchemaBuilder:
         from knowledgecomplex.exceptions import SchemaError
         if name in self._types:
             raise SchemaError(f"Type '{name}' is already registered")
+        self._validate_parent(parent, "edge")
         attributes = attributes or {}
-        self._types[name] = {"kind": "edge", "attributes": dict(attributes)}
+        bind = bind or {}
+
+        self._types[name] = {
+            "kind": "edge",
+            "attributes": dict(attributes),
+            "parent": parent,
+            "bind": dict(bind),
+        }
+
+        if bind:
+            inherited = self._collect_inherited_attributes(name)
+            all_attrs = {**inherited, **attributes}
+            self._validate_bind(bind, all_attrs)
+
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
 
         # OWL
+        superclass = self._ns[parent] if parent else _KC.Edge
         self._owl_graph.add((type_iri, RDF.type, OWL.Class))
-        self._owl_graph.add((type_iri, RDFS.subClassOf, _KC.Edge))
+        self._owl_graph.add((type_iri, RDFS.subClassOf, superclass))
 
         # SHACL
         self._shacl_graph.add((shape_iri, RDF.type, _SH.NodeShape))
@@ -381,12 +528,17 @@ class SchemaBuilder:
         for attr_name, attr_spec in attributes.items():
             self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
+        if bind:
+            self._apply_bind(shape_iri, bind)
+
         return self
 
     def add_face_type(
         self,
         name: str,
         attributes: dict[str, Any] | None = None,
+        parent: str | None = None,
+        bind: dict[str, str] | None = None,
     ) -> "SchemaBuilder":
         """
         Declare a new face type (OWL subclass of KC:Face + SHACL property shapes).
@@ -400,6 +552,10 @@ class SchemaBuilder:
         attributes : dict, optional
             Mapping of attribute name to descriptor (VocabDescriptor, TextDescriptor,
             or dict with "vocab"/"text" key and optional "required" flag).
+        parent : str, optional
+            Name of a registered face type to inherit from.
+        bind : dict, optional
+            Mapping of attribute names to fixed string values (sh:hasValue).
 
         Returns
         -------
@@ -408,14 +564,29 @@ class SchemaBuilder:
         from knowledgecomplex.exceptions import SchemaError
         if name in self._types:
             raise SchemaError(f"Type '{name}' is already registered")
+        self._validate_parent(parent, "face")
         attributes = attributes or {}
-        self._types[name] = {"kind": "face", "attributes": dict(attributes)}
+        bind = bind or {}
+
+        self._types[name] = {
+            "kind": "face",
+            "attributes": dict(attributes),
+            "parent": parent,
+            "bind": dict(bind),
+        }
+
+        if bind:
+            inherited = self._collect_inherited_attributes(name)
+            all_attrs = {**inherited, **attributes}
+            self._validate_bind(bind, all_attrs)
+
         type_iri = self._ns[name]
         shape_iri = self._nss[f"{name}Shape"]
 
         # OWL
+        superclass = self._ns[parent] if parent else _KC.Face
         self._owl_graph.add((type_iri, RDF.type, OWL.Class))
-        self._owl_graph.add((type_iri, RDFS.subClassOf, _KC.Face))
+        self._owl_graph.add((type_iri, RDFS.subClassOf, superclass))
 
         # SHACL
         self._shacl_graph.add((shape_iri, RDF.type, _SH.NodeShape))
@@ -424,7 +595,72 @@ class SchemaBuilder:
         for attr_name, attr_spec in attributes.items():
             self._dispatch_attr(type_iri, shape_iri, attr_name, attr_spec)
 
+        if bind:
+            self._apply_bind(shape_iri, bind)
+
         return self
+
+    def describe_type(self, name: str) -> dict:
+        """
+        Inspect a registered type's attributes, parent, and bindings.
+
+        Parameters
+        ----------
+        name : str
+            The registered type name.
+
+        Returns
+        -------
+        dict
+            Keys: name, kind, parent, own_attributes, inherited_attributes,
+            all_attributes, bound.
+        """
+        from knowledgecomplex.exceptions import SchemaError
+        if name not in self._types:
+            raise SchemaError(f"Type '{name}' is not registered")
+
+        info = self._types[name]
+        own_attrs = dict(info.get("attributes", {}))
+        inherited_attrs = self._collect_inherited_attributes(name)
+        # Collect bindings from ancestors
+        inherited_bind = {}
+        current = info.get("parent")
+        while current is not None:
+            parent_bind = self._types[current].get("bind", {})
+            for k, v in parent_bind.items():
+                if k not in inherited_bind:
+                    inherited_bind[k] = v
+            current = self._types[current].get("parent")
+        own_bind = dict(info.get("bind", {}))
+        all_bind = {**inherited_bind, **own_bind}
+
+        all_attrs = {**inherited_attrs, **own_attrs}
+        return {
+            "name": name,
+            "kind": info["kind"],
+            "parent": info.get("parent"),
+            "own_attributes": own_attrs,
+            "inherited_attributes": inherited_attrs,
+            "all_attributes": all_attrs,
+            "bound": all_bind,
+        }
+
+    def type_names(self, kind: str | None = None) -> list[str]:
+        """
+        List registered type names, optionally filtered by kind.
+
+        Parameters
+        ----------
+        kind : str, optional
+            Filter by "vertex", "edge", or "face".
+
+        Returns
+        -------
+        list[str]
+        """
+        if kind is None:
+            return list(self._types.keys())
+        return [n for n, info in self._types.items() if info["kind"] == kind]
 
     def promote_to_attribute(
         self,
@@ -542,6 +778,247 @@ class SchemaBuilder:
         self._shacl_graph.add((constraint, _SH.message, Literal(message)))
         return self
 
+    # --- Topological query registration and constraint escalation ---
+
+    _TOPO_PATTERNS: dict[str, tuple[str, str]] = {
+        # operation -> (graph_pattern_template, result_variable)
+        # {simplex_iri} is replaced by the target IRI,
+        # {type_filter} by a type constraint or "".
+        "boundary": (
+            "{simplex_iri} kc:boundedBy ?result . {type_filter}",
+            "result",
+        ),
+        "coboundary": (
+            "?result kc:boundedBy {simplex_iri} . {type_filter}",
+            "result",
+        ),
+        "star": (
+            "?result kc:boundedBy* {simplex_iri} . {type_filter}",
+            "result",
+        ),
+        "closure": (
+            "{simplex_iri} kc:boundedBy* ?result . {type_filter}",
+            "result",
+        ),
+        "link": (
+            # closed_star minus star: elements reachable from star's closure
+            # but not in the star itself
+            "?star_elem kc:boundedBy* {simplex_iri} . "
+            "?star_elem kc:boundedBy* ?result . "
+            "FILTER NOT EXISTS {{ ?result kc:boundedBy* {simplex_iri} }} "
+            "{type_filter}",
+            "result",
+        ),
+        "degree": (
+            "?result kc:boundedBy {simplex_iri} .",
+            "result",
+        ),
+    }
+
+    def _build_topo_sparql(
+        self,
+        operation: str,
+        *,
+        simplex_iri: str = "{simplex}",
+        target_type: str | None = None,
+    ) -> str:
+        """Build a complete SPARQL SELECT from a topological operation.
+
+        Parameters
+        ----------
+        operation :
+            One of: boundary, coboundary, star, closure, link, degree.
+        simplex_iri :
+            IRI or placeholder for the focus element.
+        target_type :
+            Optional type name to filter results.
+
+        Returns
+        -------
+        str
+            A complete SPARQL SELECT query string.
+        """
+        from knowledgecomplex.exceptions import SchemaError
+        if operation not in self._TOPO_PATTERNS:
+            raise SchemaError(
+                f"Unknown topological operation '{operation}'. "
+                f"Valid: {sorted(self._TOPO_PATTERNS)}"
+            )
+        pattern_tmpl, result_var = self._TOPO_PATTERNS[operation]
+
+        if target_type is not None:
+            if target_type not in self._types:
+                raise SchemaError(f"Type '{target_type}' is not registered")
+            type_iri = self._ns[target_type]
+            tf = f"?{result_var} a/rdfs:subClassOf* <{type_iri}> ."
+        else:
+            tf = ""
+
+        pattern = (
+            pattern_tmpl
+            .replace("{simplex_iri}", simplex_iri)
+            .replace("{type_filter}", tf)
+        )
+
+        return (
+            f"PREFIX kc: <https://example.org/kc#>\n"
+            f"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+            f"SELECT ?{result_var} WHERE {{\n"
+            f"    {pattern}\n"
+            f"}}\n"
+        )
+
+    def add_query(
+        self,
+        name: str,
+        operation: str,
+        *,
+        target_type: str | None = None,
+    ) -> "SchemaBuilder":
+        """Register a named topological query template on this schema.
+
+        The query is generated from a topological operation and optional type
+        filter, then stored internally. It is exported as a ``.sparql`` file
+        by :meth:`export` and automatically loaded by
+        :class:`~knowledgecomplex.graph.KnowledgeComplex` at runtime.
+
+        Parameters
+        ----------
+        name : str
+            Query template name (becomes the filename stem, e.g. ``"spec_coboundary"``
+            exports as ``queries/spec_coboundary.sparql``).
+        operation : str
+            Topological operation: ``"boundary"``, ``"coboundary"``, ``"star"``,
+            ``"closure"``, ``"link"``, or ``"degree"``.
+        target_type : str, optional
+            Filter results to this type (including subtypes via OWL class hierarchy).
+
+        Returns
+        -------
+        SchemaBuilder (self, for chaining)
+
+        Example
+        -------
+        >>> sb.add_query("spec_coboundary", "coboundary", target_type="verification")
+        """
+        sparql = self._build_topo_sparql(
+            operation, simplex_iri="{simplex}", target_type=target_type,
+        )
+        self._queries[name] = sparql
+        return self
+
+    def add_topological_constraint(
+        self,
+        type_name: str,
+        operation: str,
+        *,
+        target_type: str | None = None,
+        predicate: str = "min_count",
+        min_count: int = 1,
+        max_count: int | None = None,
+        message: str | None = None,
+    ) -> "SchemaBuilder":
+        """Escalate a topological query to a SHACL constraint.
+
+        Generates a ``sh:sparql`` constraint that, for each focus node of
+        *type_name*, evaluates a topological operation and checks a cardinality
+        predicate. Delegates to :meth:`add_sparql_constraint`.
+
+        Parameters
+        ----------
+        type_name : str
+            The type to constrain (must be registered).
+        operation : str
+            Topological operation: ``"boundary"``, ``"coboundary"``, ``"star"``,
+            ``"closure"``, ``"link"``, or ``"degree"``.
+        target_type : str, optional
+            Filter the topological result to this type.
+        predicate : str
+            ``"min_count"`` — at least *min_count* results (default).
+            ``"max_count"`` — at most *max_count* results.
+            ``"exact_count"`` — exactly *min_count* results.
+        min_count : int
+            Minimum count (used by ``"min_count"`` and ``"exact_count"``).
+        max_count : int, optional
+            Maximum count (used by ``"max_count"``).
+        message : str, optional
+            Custom violation message. Auto-generated if not provided.
+
+        Returns
+        -------
+        SchemaBuilder (self, for chaining)
+
+        Example
+        -------
+        >>> sb.add_topological_constraint(
+        ...     "spec", "coboundary",
+        ...     target_type="verification",
+        ...     predicate="min_count", min_count=1,
+        ...     message="Every spec must have at least one verification edge",
+        ... )
+        """
+        from knowledgecomplex.exceptions import SchemaError
+        if type_name not in self._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+        if operation not in self._TOPO_PATTERNS:
+            raise SchemaError(
+                f"Unknown topological operation '{operation}'. "
+                f"Valid: {sorted(self._TOPO_PATTERNS)}"
+            )
+
+        pattern_tmpl, result_var = self._TOPO_PATTERNS[operation]
+
+        if target_type is not None:
+            if target_type not in self._types:
+                raise SchemaError(f"Type '{target_type}' is not registered")
+            type_iri = self._ns[target_type]
+            tf = f"?{result_var} a/rdfs:subClassOf* <{type_iri}> ."
+        else:
+            tf = ""
+
+        pattern = (
+            pattern_tmpl
+            .replace("{simplex_iri}", "$this")
+            .replace("{type_filter}", tf)
+        )
+
+        # Build the HAVING clause based on predicate
+        if predicate == "min_count":
+            having = f"HAVING (COUNT(DISTINCT ?{result_var}) < {min_count})"
+        elif predicate == "max_count":
+            if max_count is None:
+                raise SchemaError("max_count predicate requires max_count parameter")
+            having = f"HAVING (COUNT(DISTINCT ?{result_var}) > {max_count})"
+        elif predicate == "exact_count":
+            having = f"HAVING (COUNT(DISTINCT ?{result_var}) != {min_count})"
+        else:
+            raise SchemaError(
+                f"Unknown predicate '{predicate}'. "
+                f"Valid: min_count, max_count, exact_count"
+            )
+
+        # Wrap pattern in OPTIONAL so GROUP BY produces a row even when
+        # there are zero matches (otherwise HAVING never fires for empty results)
+        sparql = (
+            f"PREFIX kc: <https://example.org/kc#>\n"
+            f"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+            f"SELECT $this WHERE {{\n"
+            f"    OPTIONAL {{ {pattern} }}\n"
+            f"}}\n"
+            f"GROUP BY $this\n"
+            f"{having}\n"
+        )
+
+        if message is None:
+            target_desc = f" of type '{target_type}'" if target_type else ""
+            message = (
+                f"Topological constraint violated: {operation}{target_desc} "
+                f"on '{type_name}' failed {predicate} check "
+                f"(min={min_count}, max={max_count})"
+            )
+
+        return self.add_sparql_constraint(type_name, sparql, message)
+
     def dump_owl(self) -> str:
         """Return merged OWL graph (core + user schema) as a Turtle string."""
         return self._owl_graph.serialize(format="turtle")
@@ -577,12 +1054,16 @@ class SchemaBuilder:
         p.mkdir(parents=True, exist_ok=True)
         (p / "ontology.ttl").write_text(self.dump_owl())
         (p / "shapes.ttl").write_text(self.dump_shacl())
-        if query_dirs:
+        # Write schema-generated query templates and copy external query dirs
+        if self._queries or query_dirs:
             qdir = p / "queries"
             qdir.mkdir(exist_ok=True)
-            for d in query_dirs:
-                for sparql_file in d.glob("*.sparql"):
-                    shutil.copy2(sparql_file, qdir / sparql_file.name)
+            for name, sparql_text in self._queries.items():
+                (qdir / f"{name}.sparql").write_text(sparql_text)
+            if query_dirs:
+                for d in query_dirs:
+                    for sparql_file in d.glob("*.sparql"):
+                        shutil.copy2(sparql_file, qdir / sparql_file.name)
         return p
 
     @classmethod
@@ -642,6 +1123,7 @@ class SchemaBuilder:
         sb._owl_graph = owl_graph
         sb._shacl_graph = shacl_graph
         sb._attr_domains = {}
+        sb._queries = {}
 
         # Reconstruct _types registry from OWL subclass triples
         sb._types = {}

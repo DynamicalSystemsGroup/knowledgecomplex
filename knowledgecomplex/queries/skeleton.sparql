@@ -1,0 +1,17 @@
+# knowledgecomplex/queries/skeleton.sparql
+# k-Skeleton: all elements of the complex with dimension <= k.
+#
+#   sk_0(K) = vertices
+#   sk_1(K) = vertices + edges
+#   sk_2(K) = vertices + edges + faces (everything)
+#
+# Usage: substitute {complex} with the IRI of the kc:Complex individual.
+#        substitute {dim_classes} with a UNION of type constraints.
+
+PREFIX kc:   <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?elem WHERE {
+    {complex} kc:hasElement ?elem .
+    {dim_classes}
+}

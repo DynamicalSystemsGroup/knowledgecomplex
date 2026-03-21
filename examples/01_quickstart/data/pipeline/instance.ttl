@@ -1,0 +1,168 @@
+@prefix ex: <https://example.org/ex#> .
+@prefix kc: <https://example.org/kc#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:_complex a kc:Complex ;
+    kc:hasElement ex:alice,
+        ex:dataset1,
+        ex:dataset2,
+        ex:e1,
+        ex:e2,
+        ex:e3,
+        ex:e4,
+        ex:e5,
+        ex:etl-run .
+
+ex:level a owl:DatatypeProperty ;
+    rdfs:comment "Allowed values: owner, steward" ;
+    rdfs:domain ex:responsible ;
+    rdfs:range xsd:string .
+
+ex:mode a owl:DatatypeProperty ;
+    rdfs:comment "Allowed values: read, write" ;
+    rdfs:range xsd:string .
+
+ex:name a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+ex:operation a owl:Class ;
+    rdfs:subClassOf kc:Face .
+
+ex:production a owl:Class ;
+    rdfs:subClassOf kc:Face .
+
+ex:role a owl:DatatypeProperty ;
+    rdfs:comment "Allowed values: lead, support" ;
+    rdfs:domain ex:performs ;
+    rdfs:range xsd:string .
+
+<https://example.org/kc> a owl:Ontology ;
+    rdfs:label "Knowledge Complex Core Ontology" ;
+    rdfs:comment "Abstract topological backbone: Element, Vertex, Edge, Face, Complex." .
+
+kc:hasElement a owl:ObjectProperty ;
+    rdfs:label "hasElement" ;
+    rdfs:comment "Membership relation: an element belongs to this complex." ;
+    rdfs:domain kc:Complex ;
+    rdfs:range kc:Element .
+
+kc:uri a owl:DatatypeProperty ;
+    rdfs:label "uri" ;
+    rdfs:comment """Optional URI pointing to the source file for this element.
+        Accepts any URI scheme (file:///, https://, etc.).
+        At-most-one per element (sh:maxCount 1 enforced in kc_core_shapes.ttl).""" ;
+    rdfs:domain kc:Element ;
+    rdfs:range xsd:anyURI .
+
+ex:accesses a owl:Class ;
+    rdfs:subClassOf kc:Edge .
+
+ex:activity a owl:Class ;
+    rdfs:subClassOf kc:Vertex .
+
+ex:actor a owl:Class ;
+    rdfs:subClassOf kc:Vertex .
+
+ex:e1 a ex:performs ;
+    ex:role "lead" ;
+    kc:boundedBy ex:alice,
+        ex:etl-run .
+
+ex:e2 a ex:requires ;
+    ex:mode "read" ;
+    kc:boundedBy ex:dataset1,
+        ex:etl-run .
+
+ex:e3 a ex:produces ;
+    ex:mode "write" ;
+    kc:boundedBy ex:dataset2,
+        ex:etl-run .
+
+ex:e4 a ex:accesses ;
+    ex:mode "read" ;
+    kc:boundedBy ex:alice,
+        ex:dataset1 .
+
+ex:e5 a ex:responsible ;
+    ex:level "owner" ;
+    kc:boundedBy ex:alice,
+        ex:dataset2 .
+
+ex:produces a owl:Class ;
+    rdfs:subClassOf kc:Edge .
+
+ex:requires a owl:Class ;
+    rdfs:subClassOf kc:Edge .
+
+ex:performs a owl:Class ;
+    rdfs:subClassOf kc:Edge .
+
+ex:resource a owl:Class ;
+    rdfs:subClassOf kc:Vertex .
+
+ex:responsible a owl:Class ;
+    rdfs:subClassOf kc:Edge .
+
+kc:Complex a owl:Class ;
+    rdfs:label "Complex" ;
+    rdfs:comment """A simplicial complex: a collection of elements (simplices) that is
+        closed under the boundary operator. If a simplex is in the complex, all its
+        boundary elements must also be in the complex. Topological validity of the
+        composition is enforced by SHACL (see kcs:ComplexShape).""" .
+
+kc:Face a owl:Class ;
+    rdfs:label "Face" ;
+    rdfs:comment "Abstract 2-simplex. Boundary: exactly 3 edges. Concrete types must subclass this." ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:onClass kc:Edge ;
+            owl:onProperty kc:boundedBy ;
+            owl:qualifiedCardinality "3"^^xsd:nonNegativeInteger ],
+        kc:Element .
+
+kc:boundedBy a owl:ObjectProperty ;
+    rdfs:label "boundedBy" ;
+    rdfs:comment """Boundary operator (∂). Maps a k-simplex to its bounding
+        (k-1)-simplices. Cardinality is enforced per subclass via OWL restrictions.
+        Vertices (k=0) have empty boundary. For k>=1, cardinality = k+1.
+        All elements are unoriented (boundary is an unordered set).""" ;
+    rdfs:domain kc:Element ;
+    rdfs:range kc:Element .
+
+ex:dataset1 a ex:resource ;
+    ex:name "JSON Records" .
+
+ex:dataset2 a ex:resource ;
+    ex:name "Sales DB" .
+
+ex:alice a ex:actor ;
+    ex:name "Alice" .
+
+ex:etl-run a ex:activity ;
+    ex:name "Daily ETL" .
+
+kc:Vertex a owl:Class ;
+    rdfs:label "Vertex" ;
+    rdfs:comment "Abstract 0-simplex. Empty boundary (∂v = ∅). Concrete types must subclass this." ;
+    rdfs:subClassOf kc:Element .
+
+kc:Edge a owl:Class ;
+    rdfs:label "Edge" ;
+    rdfs:comment "Abstract 1-simplex. Boundary: exactly 2 vertices. Concrete types must subclass this." ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:onClass kc:Vertex ;
+            owl:onProperty kc:boundedBy ;
+            owl:qualifiedCardinality "2"^^xsd:nonNegativeInteger ],
+        kc:Element .
+
+kc:Element a owl:Class ;
+    rdfs:label "Element" ;
+    rdfs:comment """Abstract topological element (k-simplex). All KC types are elements.
+        The simplex order k determines boundary cardinality:
+          k=0 (Vertex): empty boundary (cardinality 0)
+          k=1 (Edge):   2 boundary vertices
+          k=2 (Face):   3 boundary edges
+          k>=1 general: (k+1) boundary (k-1)-simplices
+        Higher orders can be defined by subclassing Element.""" .
+

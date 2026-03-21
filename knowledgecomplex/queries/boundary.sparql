@@ -1,0 +1,17 @@
+# knowledgecomplex/queries/boundary.sparql
+# Boundary operator: direct faces of a simplex via kc:boundedBy.
+#
+#   Boundary of a Vertex = {} (empty)
+#   Boundary of an Edge  = {v1, v2}  (two boundary vertices)
+#   Boundary of a Face   = {e1, e2, e3}  (three boundary edges)
+#
+# Usage: substitute {simplex} with the IRI of the element.
+#        substitute {type_filter} with a type constraint or empty string.
+
+PREFIX kc:   <https://example.org/kc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?boundary WHERE {
+    {simplex} kc:boundedBy ?boundary .
+    {type_filter}
+}
