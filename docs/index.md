@@ -65,4 +65,4 @@ df = kc.query("vertices")   # built-in SPARQL template
 print(df)
 ```
 
-See [`examples/quickstart.py`](https://github.com/blockscience/knowledgecomplex/blob/main/examples/quickstart.py) for a runnable version with topological queries included.
+See [`examples/quickstart.py`](https://github.com/blockscience/knowledgecomplex/blob/main/examples/quickstart.py) to load a pre-built complex and discover hidden structure. See [`examples/construction.py`](https://github.com/blockscience/knowledgecomplex/blob/main/examples/construction.py) for schema construction from scratch.

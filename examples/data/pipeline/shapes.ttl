@@ -1,0 +1,167 @@
+@prefix ex: <https://example.org/ex#> .
+@prefix exs: <https://example.org/ex/shape#> .
+@prefix kc: <https://example.org/kc#> .
+@prefix kcs: <https://example.org/kc/shape#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+exs:accessesShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "read" "write" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:mode ] ;
+    sh:targetClass ex:accesses .
+
+exs:activityShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:name ] ;
+    sh:targetClass ex:activity .
+
+exs:actorShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:name ] ;
+    sh:targetClass ex:actor .
+
+exs:performsShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "lead" "support" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:role ] ;
+    sh:targetClass ex:performs .
+
+exs:producesShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "read" "write" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:mode ] ;
+    sh:targetClass ex:produces .
+
+exs:requiresShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "read" "write" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:mode ] ;
+    sh:targetClass ex:requires .
+
+exs:resourceShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:name ] ;
+    sh:targetClass ex:resource .
+
+exs:responsibleShape a sh:NodeShape ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:in ( "owner" "steward" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:path ex:level ] ;
+    sh:targetClass ex:responsible .
+
+kcs:ComplexShape a sh:NodeShape ;
+    rdfs:label "ComplexShape" ;
+    rdfs:comment """Boundary-closure constraint: if a simplex is in the complex,
+        all its boundary elements must also be in the complex.""" ;
+    sh:sparql [ a sh:SPARQLConstraint ;
+            rdfs:comment """Boundary-closure: for every element in the complex,
+            each of its boundedBy targets must also be a hasElement of the complex.""" ;
+            sh:message "Complex is not closed under the boundary operator: an element's boundary element is missing from the complex." ;
+            sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:hasElement ?elem .
+                ?elem kc:boundedBy ?boundary .
+                FILTER NOT EXISTS {
+                    $this kc:hasElement ?boundary .
+                }
+            }
+        """ ] ;
+    sh:targetClass kc:Complex .
+
+kcs:EdgeShape a sh:NodeShape ;
+    rdfs:label "EdgeShape" ;
+    rdfs:comment "Topological constraints on KC:Edge instances." ;
+    sh:property [ sh:class kc:Vertex ;
+            sh:maxCount 2 ;
+            sh:message "Edge must have exactly two boundedBy relations of type KC:Vertex." ;
+            sh:minCount 2 ;
+            sh:path kc:boundedBy ] ;
+    sh:sparql [ a sh:SPARQLConstraint ;
+            rdfs:comment "Edge boundary vertices must be distinct individuals." ;
+            sh:message "Edge boundary vertices must not be the same vertex." ;
+            sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:boundedBy ?v .
+            }
+            GROUP BY $this
+            HAVING (COUNT(DISTINCT ?v) < 2)
+        """ ] ;
+    sh:targetClass kc:Edge .
+
+kcs:ElementShape a sh:NodeShape ;
+    rdfs:label "ElementShape" ;
+    rdfs:comment "Superstructure constraint: kc:uri may appear at most once per element." ;
+    sh:property [ sh:datatype xsd:anyURI ;
+            sh:maxCount 1 ;
+            sh:message "An element may have at most one kc:uri value." ;
+            sh:path kc:uri ] ;
+    sh:targetClass kc:Element .
+
+kcs:FaceShape a sh:NodeShape ;
+    rdfs:label "FaceShape" ;
+    rdfs:comment "Topological constraints on KC:Face instances." ;
+    sh:property [ sh:class kc:Edge ;
+            sh:maxCount 3 ;
+            sh:message "Face must have exactly three boundedBy relations, each of type KC:Edge." ;
+            sh:minCount 3 ;
+            sh:path kc:boundedBy ] ;
+    sh:sparql [ a sh:SPARQLConstraint ;
+            rdfs:comment """
+            Closed-triangle constraint: the 3 boundary edges of a Face must share
+            vertices forming a cycle (v1-v2, v2-v3, v3-v1). This cannot be expressed
+            in OWL because it requires co-referencing property values across 3 edge
+            individuals.
+        """ ;
+            sh:message "Face boundary edges do not form a closed triangle over shared vertices." ;
+            sh:select """
+            PREFIX kc: <https://example.org/kc#>
+            SELECT $this WHERE {
+                $this kc:boundedBy ?e1 ;
+                      kc:boundedBy ?e2 ;
+                      kc:boundedBy ?e3 .
+                FILTER (?e1 != ?e2 && ?e2 != ?e3 && ?e1 != ?e3)
+                ?e1 kc:boundedBy ?a1 ; kc:boundedBy ?b1 .
+                ?e2 kc:boundedBy ?a2 ; kc:boundedBy ?b2 .
+                ?e3 kc:boundedBy ?a3 ; kc:boundedBy ?b3 .
+                FILTER (?a1 != ?b1 && ?a2 != ?b2 && ?a3 != ?b3)
+                # For a valid triangle each endpoint of e1 must appear in at least
+                # one other edge's boundary.
+                BIND(
+                    EXISTS {
+                        { ?e2 kc:boundedBy ?a1 } UNION { ?e3 kc:boundedBy ?a1 }
+                    } AS ?a1_shared
+                )
+                BIND(
+                    EXISTS {
+                        { ?e2 kc:boundedBy ?b1 } UNION { ?e3 kc:boundedBy ?b1 }
+                    } AS ?b1_shared
+                )
+                FILTER NOT EXISTS {
+                    # Valid closed triangle: each endpoint of e1 is shared with another edge
+                    FILTER (?a1_shared && ?b1_shared)
+                }
+            }
+        """ ] ;
+    sh:targetClass kc:Face .
+

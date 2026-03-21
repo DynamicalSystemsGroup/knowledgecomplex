@@ -1,119 +1,106 @@
 """
-quickstart.py — Runnable version of the README quick-start example.
+quickstart.py — Load a complex, discover hidden structure, extend it.
 
-Models a data pipeline as a typed simplicial complex:
-  - 4 vertices: an actor, an activity, and two resources
-  - 5 edges: performs, requires, produces, accesses, responsible
-  - 2 faces: an operation triangle and a production triangle
+This example loads a pre-built data pipeline complex (vertices and edges
+only), discovers triangles via clique detection, declares a face type,
+fills in the faces, and shows how the topology changes.
 
 Run:
-    pip install knowledgecomplex[viz,analysis]
+    pip install knowledgecomplex[analysis,viz]
     python examples/quickstart.py
 """
 
-from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text
+import os
+from pathlib import Path
 
-# 1. Define a schema
-sb = SchemaBuilder(namespace="ex")
-sb.add_vertex_type("actor",    attributes={"name": text()})
-sb.add_vertex_type("activity", attributes={"name": text()})
-sb.add_vertex_type("resource", attributes={"name": text()})
-sb.add_edge_type("performs",     attributes={"role": vocab("lead", "support")})
-sb.add_edge_type("requires",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("produces",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("accesses",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("responsible", attributes={"level": vocab("owner", "steward")})
-sb.add_face_type("operation")
-sb.add_face_type("production")
-
-# 2. Build an instance
-kc = KnowledgeComplex(schema=sb)
-kc.add_vertex("alice",    type="actor",    name="Alice")
-kc.add_vertex("etl-run",  type="activity", name="Daily ETL")
-kc.add_vertex("dataset1", type="resource", name="JSON Records")
-kc.add_vertex("dataset2", type="resource", name="Sales DB")
-
-kc.add_edge("e1", type="performs",    vertices={"alice", "etl-run"},    role="lead")
-kc.add_edge("e2", type="requires",   vertices={"etl-run", "dataset1"}, mode="read")
-kc.add_edge("e3", type="produces",   vertices={"etl-run", "dataset2"}, mode="write")
-kc.add_edge("e4", type="accesses",   vertices={"alice", "dataset1"},   mode="read")
-kc.add_edge("e5", type="responsible", vertices={"alice", "dataset2"},  level="owner")
-
-kc.add_face("op1",   type="operation",  boundary=["e1", "e2", "e4"])
-kc.add_face("prod1", type="production", boundary=["e1", "e3", "e5"])
-
-# 3. Query
-print("=== Vertices ===")
-df = kc.query("vertices")
-print(df)
-print()
-
-# 4. Topological queries
-print("=== Boundary of face op1 ===")
-print(kc.boundary("op1"))
-print()
-
-print("=== Star of alice (all simplices containing alice) ===")
-print(kc.star("alice"))
-print()
-
-print("=== Skeleton k=1 (vertices + edges only) ===")
-print(kc.skeleton(1))
-print()
-
-# 5. Algebraic topology
-from knowledgecomplex import betti_numbers, euler_characteristic, edge_pagerank, edge_influence
-
-betti = betti_numbers(kc)
-chi = euler_characteristic(kc)
-print(f"=== Betti numbers: {betti} ===")
-print(f"  beta_0 = {betti[0]}  (connected components)")
-print(f"  beta_1 = {betti[1]}  (independent cycles)")
-print(f"  beta_2 = {betti[2]}  (enclosed voids)")
-print(f"  Euler characteristic chi = {chi}  (V - E + F = {len(kc.skeleton(0))} - {len(kc.skeleton(1) - kc.skeleton(0))} + {len(kc.skeleton(2) - kc.skeleton(1))})")
-print()
-
-# Edge PageRank — measure influence of each edge on the complex
-from knowledgecomplex import boundary_matrices
-bm = boundary_matrices(kc)
-print("=== Edge PageRank (influence ranking) ===")
-for eid in sorted(bm.edge_index):
-    pr = edge_pagerank(kc, eid)
-    infl = edge_influence(eid, pr)
-    print(f"  {eid:12s}  spread={infl.spread:.3f}  influence={infl.absolute_influence:.3f}")
-print()
-
-# 6. Inspect the RDF
-print("=== Turtle dump ===")
-print(kc.dump_graph())
-
-# 6. Visualize — Hasse diagrams (elements as nodes, boundary as directed arrows)
 from knowledgecomplex import (
-    to_networkx, verify_networkx,
-    plot_hasse, plot_hasse_star, plot_geometric,
+    KnowledgeComplex, find_cliques, infer_faces,
+    betti_numbers, euler_characteristic,
+    plot_hasse, plot_geometric,
 )
+
+# ── 1. Load a pre-built complex ──────────────────────────────────────────
+
+data_dir = Path(__file__).parent / "data" / "pipeline"
+kc = KnowledgeComplex.load(data_dir)
+
+print("=== Loaded complex ===")
+ids = kc.element_ids()
+print(f"{len(ids)} elements: {sorted(ids)}")
+print()
+
+# List vertices
+print("=== Vertices ===")
+print(kc.query("vertices"))
+print()
+
+# ── 2. Discover hidden structure ─────────────────────────────────────────
+
+triangles = find_cliques(kc, k=3)
+print(f"=== Discovered {len(triangles)} triangles (3-cliques) ===")
+for tri in triangles:
+    print(f"  vertices: {sorted(tri)}")
+
+    # Show which edges connect them
+    for eid in sorted(kc.element_ids()):
+        elem = kc.element(eid)
+        kind = kc._schema._types.get(elem.type, {}).get("kind")
+        if kind == "edge" and kc.boundary(eid) <= tri:
+            print(f"    edge {eid} ({elem.type}): {sorted(kc.boundary(eid))}")
+print()
+
+# ── 3. Topology before faces ─────────────────────────────────────────────
+
+betti_before = betti_numbers(kc)
+print(f"=== Topology (no faces) ===")
+print(f"  Betti numbers: {betti_before}")
+print(f"  β₁ = {betti_before[1]} independent cycles")
+print(f"  Euler characteristic: {euler_characteristic(kc)}")
+print()
+
+# ── 4. Declare a face type and fill in faces ─────────────────────────────
+
+# The triangles represent higher-order relationships we want to name.
+# Let's call them "operation" faces — they capture the full actor-activity-resource triad.
+kc._schema.add_face_type("operation")
+
+# infer_faces finds all triangles and adds them as faces automatically
+added = infer_faces(kc, "operation")
+print(f"=== Added {len(added)} faces ===")
+for fid in added:
+    print(f"  {fid}: boundary = {sorted(kc.boundary(fid))}")
+print()
+
+# ── 5. Topology after faces ──────────────────────────────────────────────
+
+betti_after = betti_numbers(kc)
+print(f"=== Topology (with faces) ===")
+print(f"  Betti numbers: {betti_after}")
+print(f"  β₁ = {betti_after[1]} independent cycles (was {betti_before[1]})")
+print(f"  Euler characteristic: {euler_characteristic(kc)}")
+print()
+
+if betti_before[1] > betti_after[1]:
+    print("  Faces filled in cycles — the complex is more connected!")
+elif betti_before[1] == betti_after[1]:
+    print("  No change in β₁ — cycles were already independent of the faces.")
+print()
+
+# ── 6. Visualize ─────────────────────────────────────────────────────────
+
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# Export to directed networkx graph and verify invariants
-G = to_networkx(kc)
-verify_networkx(G)
-print(f"DiGraph: {G.number_of_nodes()} nodes, {G.number_of_edges()} directed edges")
-print()
+out = Path(__file__).parent
 
-# Hasse diagram — arrows point from faces→edges→vertices (high→low dim)
 fig, ax = plot_hasse(kc, figsize=(12, 9))
-fig.savefig("examples/hasse.png", dpi=150, bbox_inches="tight")
-print("Saved examples/hasse.png")
-plt.close(fig)
+fig.savefig(out / "quickstart_hasse.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'quickstart_hasse.png'}")
 
-# Hasse star of alice — her neighborhood highlighted
-fig, ax = plot_hasse_star(kc, "alice", figsize=(12, 9))
-fig.savefig("examples/hasse_star_alice.png", dpi=150, bbox_inches="tight")
-print("Saved examples/hasse_star_alice.png")
-plt.close(fig)
-
-# 7. Geometric realization — vertices as 3D points, edges as lines, faces as triangles
 fig, ax = plot_geometric(kc, figsize=(12, 9))
-fig.savefig("examples/geometric.png", dpi=150, bbox_inches="tight")
-print("Saved examples/geometric.png")
-plt.close(fig)
+fig.savefig(out / "quickstart_geometric.png", dpi=150, bbox_inches="tight")
+print(f"Saved {out / 'quickstart_geometric.png'}")
+
+plt.close("all")
+print("\nDone! See the PNG files in examples/")

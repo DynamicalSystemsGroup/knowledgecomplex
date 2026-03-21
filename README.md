@@ -68,7 +68,7 @@ print(df)
 print(kc.dump_graph())       # Turtle string
 ```
 
-See [`examples/quickstart.py`](examples/quickstart.py) for a runnable version of this example.
+See [`examples/quickstart.py`](examples/quickstart.py) to load a pre-built complex, discover triangles via clique detection, and extend it with faces. See [`examples/construction.py`](examples/construction.py) for a runnable version of the schema construction above.
 
 ## The `kc:uri` attribute
 
