@@ -31,8 +31,8 @@ _CORE_OWL = _RESOURCES / "kc_core.ttl"
 _CORE_SHAPES = _RESOURCES / "kc_core_shapes.ttl"
 
 # Internal namespace constants
-_KC = Namespace("https://example.org/kc#")
-_KCS = Namespace("https://example.org/kc/shape#")
+_KC = Namespace("https://w3id.org/kc#")
+_KCS = Namespace("https://w3id.org/kc/shape#")
 _SH = Namespace("http://www.w3.org/ns/shacl#")
 
 
@@ -861,7 +861,7 @@ class SchemaBuilder:
         )
 
         return (
-            f"PREFIX kc: <https://example.org/kc#>\n"
+            f"PREFIX kc: <https://w3id.org/kc#>\n"
             f"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
             f"SELECT ?{result_var} WHERE {{\n"
             f"    {pattern}\n"
@@ -1000,7 +1000,7 @@ class SchemaBuilder:
         # Wrap pattern in OPTIONAL so GROUP BY produces a row even when
         # there are zero matches (otherwise HAVING never fires for empty results)
         sparql = (
-            f"PREFIX kc: <https://example.org/kc#>\n"
+            f"PREFIX kc: <https://w3id.org/kc#>\n"
             f"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
             f"SELECT $this WHERE {{\n"
             f"    OPTIONAL {{ {pattern} }}\n"

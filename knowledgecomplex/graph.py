@@ -45,7 +45,7 @@ from knowledgecomplex.schema import SchemaBuilder, Codec
 _FRAMEWORK_QUERIES_DIR = Path(__file__).parent / "queries"
 
 # Internal namespace constants
-_KC = Namespace("https://example.org/kc#")
+_KC = Namespace("https://w3id.org/kc#")
 
 
 def _load_query_templates(
@@ -744,7 +744,7 @@ class KnowledgeComplex:
             sparql = f"""
             SELECT ?elem WHERE {{
                 ?elem a/rdfs:subClassOf* <{type_iri}> .
-                <{self._complex_iri}> <https://example.org/kc#hasElement> ?elem .
+                <{self._complex_iri}> <https://w3id.org/kc#hasElement> ?elem .
             }}
             """
             results = self._instance_graph.query(
@@ -881,7 +881,7 @@ class KnowledgeComplex:
         """
         tf = self._type_filter_clause("coboundary", type)
         sparql = f"""\
-PREFIX kc: <https://example.org/kc#>
+PREFIX kc: <https://w3id.org/kc#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?coboundary WHERE {{
     ?coboundary kc:boundedBy <{self._iri(id)}> .
@@ -938,7 +938,7 @@ SELECT ?coboundary WHERE {{
         values = " ".join(f"(<{self._iri(i)}>)" for i in ids)
         tf = self._type_filter_clause("closure", type)
         sparql = f"""\
-PREFIX kc: <https://example.org/kc#>
+PREFIX kc: <https://w3id.org/kc#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?closure WHERE {{
     VALUES (?sigma) {{ {values} }}

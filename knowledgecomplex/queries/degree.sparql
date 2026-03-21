@@ -5,7 +5,7 @@
 #
 # Usage: substitute {simplex} with the IRI of the vertex.
 
-PREFIX kc: <https://example.org/kc#>
+PREFIX kc: <https://w3id.org/kc#>
 
 SELECT (COUNT(?edge) AS ?degree) WHERE {
     ?edge kc:boundedBy {simplex} .

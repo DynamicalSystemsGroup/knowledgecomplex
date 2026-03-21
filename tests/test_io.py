@@ -160,7 +160,7 @@ def test_load_validate_fail_rollback(schema, tmp_path):
     bad_ttl = tmp_path / "bad.ttl"
     bad_ttl.write_text("""\
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix kc: <https://example.org/kc#> .
+@prefix kc: <https://w3id.org/kc#> .
 @prefix demo: <https://example.org/demo#> .
 
 <https://example.org/demo#dangling_edge> rdf:type demo:Link ;
