@@ -251,6 +251,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../ontology/" class="md-nav__link">
         
   
@@ -293,10 +320,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
@@ -314,8 +341,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3410,7 +3437,7 @@ kc.add_edge("ver-001", type="verification",
             <span class="n">sparql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">            SELECT ?elem WHERE </span><span class="se">{{</span>
 <span class="s2">                ?elem a/rdfs:subClassOf* &lt;</span><span class="si">{</span><span class="n">type_iri</span><span class="si">}</span><span class="s2">&gt; .</span>
-<span class="s2">                &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_complex_iri</span><span class="si">}</span><span class="s2">&gt; &lt;https://example.org/kc#hasElement&gt; ?elem .</span>
+<span class="s2">                &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_complex_iri</span><span class="si">}</span><span class="s2">&gt; &lt;https://w3id.org/kc#hasElement&gt; ?elem .</span>
 <span class="s2">            </span><span class="se">}}</span>
 <span class="s2">            &quot;&quot;&quot;</span>
             <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_graph</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
@@ -3547,7 +3574,7 @@ kc.add_edge("ver-001", type="verification",
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type_filter_clause</span><span class="p">(</span><span class="s2">&quot;coboundary&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
         <span class="n">sparql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">PREFIX kc: &lt;https://example.org/kc#&gt;</span>
+<span class="s2">PREFIX kc: &lt;https://w3id.org/kc#&gt;</span>
 <span class="s2">PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;</span>
 <span class="s2">SELECT ?coboundary WHERE </span><span class="se">{{</span>
 <span class="s2">    ?coboundary kc:boundedBy &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_iri</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span><span class="si">}</span><span class="s2">&gt; .</span>
@@ -3604,7 +3631,7 @@ kc.add_edge("ver-001", type="verification",
         <span class="n">values</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_iri</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s2">&gt;)&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">)</span>
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type_filter_clause</span><span class="p">(</span><span class="s2">&quot;closure&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
         <span class="n">sparql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">PREFIX kc: &lt;https://example.org/kc#&gt;</span>
+<span class="s2">PREFIX kc: &lt;https://w3id.org/kc#&gt;</span>
 <span class="s2">PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;</span>
 <span class="s2">SELECT ?closure WHERE </span><span class="se">{{</span>
 <span class="s2">    VALUES (?sigma) </span><span class="se">{{</span><span class="s2"> </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2"> </span><span class="se">}}</span>
@@ -5801,7 +5828,7 @@ for the instance graph.</p>
         <span class="n">sparql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">        SELECT ?elem WHERE </span><span class="se">{{</span>
 <span class="s2">            ?elem a/rdfs:subClassOf* &lt;</span><span class="si">{</span><span class="n">type_iri</span><span class="si">}</span><span class="s2">&gt; .</span>
-<span class="s2">            &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_complex_iri</span><span class="si">}</span><span class="s2">&gt; &lt;https://example.org/kc#hasElement&gt; ?elem .</span>
+<span class="s2">            &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_complex_iri</span><span class="si">}</span><span class="s2">&gt; &lt;https://w3id.org/kc#hasElement&gt; ?elem .</span>
 <span class="s2">        </span><span class="se">}}</span>
 <span class="s2">        &quot;&quot;&quot;</span>
         <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance_graph</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
@@ -6327,7 +6354,7 @@ relation, not the algebraic coboundary operator δ on cochains.</p>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type_filter_clause</span><span class="p">(</span><span class="s2">&quot;coboundary&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
         <span class="n">sparql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">PREFIX kc: &lt;https://example.org/kc#&gt;</span>
+<span class="s2">PREFIX kc: &lt;https://w3id.org/kc#&gt;</span>
 <span class="s2">PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;</span>
 <span class="s2">SELECT ?coboundary WHERE </span><span class="se">{{</span>
 <span class="s2">    ?coboundary kc:boundedBy &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_iri</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span><span class="si">}</span><span class="s2">&gt; .</span>
@@ -6622,7 +6649,7 @@ union of closures.</p>
         <span class="n">values</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_iri</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s2">&gt;)&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">)</span>
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type_filter_clause</span><span class="p">(</span><span class="s2">&quot;closure&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
         <span class="n">sparql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">PREFIX kc: &lt;https://example.org/kc#&gt;</span>
+<span class="s2">PREFIX kc: &lt;https://w3id.org/kc#&gt;</span>
 <span class="s2">PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;</span>
 <span class="s2">SELECT ?closure WHERE </span><span class="se">{{</span>
 <span class="s2">    VALUES (?sigma) </span><span class="se">{{</span><span class="s2"> </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2"> </span><span class="se">}}</span>

@@ -64,7 +64,7 @@ from knowledgecomplex.ontologies import operations, brand, research
 sb = brand.schema()   # audience/theme with resonance, interplay, overlap
 ```
 
-See the [examples/](https://github.com/blockscience/knowledgecomplex/tree/main/examples) directory for 10 runnable examples.
+See the [examples/](https://github.com/blockscience/knowledgecomplex/tree/main/examples) directory for 11 runnable examples.
 
 ## API Reference
 

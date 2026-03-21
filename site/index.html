@@ -12,7 +12,7 @@
       
       
       
-        <link rel="next" href="ontology/">
+        <link rel="next" href="tutorial/">
       
       
         
@@ -340,6 +340,33 @@
   
   
     <li class="md-nav__item">
+      <a href="tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="ontology/" class="md-nav__link">
         
   
@@ -380,10 +407,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
@@ -401,8 +428,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -808,40 +835,35 @@ cd knowledgecomplex
 pip install -e &quot;.[dev]&quot;
 </code></pre>
 <h2 id="quick-start">Quick start</h2>
-<pre><code class="language-python">from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text
+<p>Load a pre-built complex, discover hidden structure, and extend it:</p>
+<pre><code class="language-python">from knowledgecomplex import KnowledgeComplex, find_cliques, betti_numbers
 
-# 1. Define a schema
-sb = SchemaBuilder(namespace=&quot;ex&quot;)
-sb.add_vertex_type(&quot;actor&quot;,    attributes={&quot;name&quot;: text()})
-sb.add_vertex_type(&quot;activity&quot;, attributes={&quot;name&quot;: text()})
-sb.add_vertex_type(&quot;resource&quot;, attributes={&quot;name&quot;: text()})
-sb.add_edge_type(&quot;performs&quot;,     attributes={&quot;role&quot;: vocab(&quot;lead&quot;, &quot;support&quot;)})
-sb.add_edge_type(&quot;requires&quot;,    attributes={&quot;mode&quot;: vocab(&quot;read&quot;, &quot;write&quot;)})
-sb.add_edge_type(&quot;produces&quot;,    attributes={&quot;mode&quot;: vocab(&quot;read&quot;, &quot;write&quot;)})
-sb.add_edge_type(&quot;accesses&quot;,    attributes={&quot;mode&quot;: vocab(&quot;read&quot;, &quot;write&quot;)})
-sb.add_edge_type(&quot;responsible&quot;, attributes={&quot;level&quot;: vocab(&quot;owner&quot;, &quot;steward&quot;)})
-sb.add_face_type(&quot;operation&quot;)
-sb.add_face_type(&quot;production&quot;)
+# 1. Load a pre-built complex (vertices and edges, no faces yet)
+kc = KnowledgeComplex.load(&quot;examples/01_quickstart/data/pipeline&quot;)
 
-# 2. Build an instance
-kc = KnowledgeComplex(schema=sb)
-kc.add_vertex(&quot;alice&quot;,    type=&quot;actor&quot;,    name=&quot;Alice&quot;)
-kc.add_vertex(&quot;etl-run&quot;,  type=&quot;activity&quot;, name=&quot;Daily ETL&quot;)
-kc.add_vertex(&quot;dataset1&quot;, type=&quot;resource&quot;, name=&quot;JSON Records&quot;)
-kc.add_vertex(&quot;dataset2&quot;, type=&quot;resource&quot;, name=&quot;Sales DB&quot;)
+# 2. Discover triangles hiding in the edge graph
+triangles = find_cliques(kc, k=3)
+print(f&quot;Found {len(triangles)} triangles&quot;)       # 2
 
-kc.add_edge(&quot;e1&quot;, type=&quot;performs&quot;,    vertices={&quot;alice&quot;, &quot;etl-run&quot;},    role=&quot;lead&quot;)
-kc.add_edge(&quot;e2&quot;, type=&quot;requires&quot;,   vertices={&quot;etl-run&quot;, &quot;dataset1&quot;}, mode=&quot;read&quot;)
-kc.add_edge(&quot;e3&quot;, type=&quot;produces&quot;,   vertices={&quot;etl-run&quot;, &quot;dataset2&quot;}, mode=&quot;write&quot;)
-kc.add_edge(&quot;e4&quot;, type=&quot;accesses&quot;,   vertices={&quot;alice&quot;, &quot;dataset1&quot;},   mode=&quot;read&quot;)
-kc.add_edge(&quot;e5&quot;, type=&quot;responsible&quot;, vertices={&quot;alice&quot;, &quot;dataset2&quot;},  level=&quot;owner&quot;)
+# 3. Check topology — independent cycles exist
+print(betti_numbers(kc))                          # [1, 2, 0] — two cycles
 
-kc.add_face(&quot;op1&quot;,   type=&quot;operation&quot;,  boundary=[&quot;e1&quot;, &quot;e2&quot;, &quot;e4&quot;])
-kc.add_face(&quot;prod1&quot;, type=&quot;production&quot;, boundary=[&quot;e1&quot;, &quot;e3&quot;, &quot;e5&quot;])
+# 4. Declare face types and fill them in
+from knowledgecomplex import infer_faces
+kc._schema.add_face_type(&quot;operation&quot;)
+infer_faces(kc, &quot;operation&quot;)
 
-# 3. Query
-df = kc.query(&quot;vertices&quot;)   # built-in SPARQL template
-print(df)
+# 5. Cycles are now filled
+print(betti_numbers(kc))                          # [1, 0, 0] — no more cycles
+
+# 6. Visualize
+from knowledgecomplex import plot_hasse, plot_geometric
+fig, ax = plot_hasse(kc)
+fig, ax = plot_geometric(kc)
+</code></pre>
+<p>For building schemas from scratch, see <a href="https://github.com/blockscience/knowledgecomplex/tree/main/examples/02_construction"><code>examples/02_construction/</code></a>. Three pre-built ontologies ship with the package:</p>
+<pre><code class="language-python">from knowledgecomplex.ontologies import operations, brand, research
+sb = brand.schema()   # audience/theme with resonance, interplay, overlap
 </code></pre>
 <p>See the <a href="https://github.com/blockscience/knowledgecomplex/tree/main/examples">examples/</a> directory for 10 runnable examples.</p>
 <h2 id="api-reference">API Reference</h2>
