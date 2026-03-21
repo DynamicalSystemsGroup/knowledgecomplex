@@ -255,6 +255,7 @@ class TestFiltrationEdgeCases:
 class TestAnalysisEdgeCases:
 
     def test_betti_single_vertex(self):
+        pytest.importorskip("scipy")
         from knowledgecomplex.analysis import betti_numbers
         sb = SchemaBuilder(namespace="test")
         sb.add_vertex_type("N")
@@ -263,6 +264,7 @@ class TestAnalysisEdgeCases:
         assert betti_numbers(kc) == [1, 0, 0]
 
     def test_betti_no_elements(self):
+        pytest.importorskip("scipy")
         from knowledgecomplex.analysis import betti_numbers
         sb = SchemaBuilder(namespace="test")
         sb.add_vertex_type("N")
@@ -270,6 +272,7 @@ class TestAnalysisEdgeCases:
         assert betti_numbers(kc) == [0, 0, 0]
 
     def test_boundary_matrices_vertices_only(self):
+        pytest.importorskip("scipy")
         from knowledgecomplex.analysis import boundary_matrices
         sb = SchemaBuilder(namespace="test")
         sb.add_vertex_type("N")
