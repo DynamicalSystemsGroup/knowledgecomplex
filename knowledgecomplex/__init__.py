@@ -26,10 +26,19 @@ try:
         hodge_decomposition,
         edge_influence,
         hodge_analysis,
+        graph_laplacian,
+        approximate_pagerank,
+        heat_kernel_pagerank,
+        sweep_cut,
+        local_partition,
+        edge_sweep_cut,
+        edge_local_partition,
         BoundaryMatrices,
         HodgeDecomposition,
         EdgeInfluence,
         HodgeAnalysisResults,
+        SweepCut,
+        EdgeSweepCut,
     )
     _HAS_ANALYSIS = True
 except ImportError:
@@ -81,4 +90,13 @@ if _HAS_ANALYSIS:
         "HodgeDecomposition",
         "EdgeInfluence",
         "HodgeAnalysisResults",
+        "graph_laplacian",
+        "approximate_pagerank",
+        "heat_kernel_pagerank",
+        "sweep_cut",
+        "local_partition",
+        "edge_sweep_cut",
+        "edge_local_partition",
+        "SweepCut",
+        "EdgeSweepCut",
     ]

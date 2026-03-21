@@ -430,6 +430,38 @@ class KnowledgeComplex:
             raise ValueError(f"add_face requires exactly 3 boundary edges; got {len(boundary)}")
         self._assert_element(id, type, boundary_ids=boundary, attributes=attributes, uri=uri)
 
+    def remove_element(self, id: str) -> None:
+        """Remove an element and all its triples from the complex.
+
+        Removes the element's type assertion, boundary relations (both
+        directions), attributes, kc:uri, and kc:hasElement membership.
+
+        No validation is performed after removal — the caller is responsible
+        for ensuring the resulting complex is valid (e.g. removing faces
+        before their boundary edges).
+
+        Parameters
+        ----------
+        id : str
+            Element identifier to remove.
+
+        Raises
+        ------
+        ValueError
+            If no element with that ID exists.
+        """
+        iri = URIRef(f"{self._schema._base_iri}{id}")
+        if (iri, RDF.type, None) not in self._instance_graph:
+            raise ValueError(f"No element with id '{id}' in the complex")
+
+        # Remove all triples where element is subject
+        for s, p, o in list(self._instance_graph.triples((iri, None, None))):
+            self._instance_graph.remove((s, p, o))
+
+        # Remove all triples where element is object (coboundary, hasElement)
+        for s, p, o in list(self._instance_graph.triples((None, None, iri))):
+            self._instance_graph.remove((s, p, o))
+
     def query(self, template_name: str, **kwargs: Any) -> pd.DataFrame:
         """
         Execute a named SPARQL template and return results as a DataFrame.
@@ -459,6 +491,10 @@ class KnowledgeComplex:
             )
         sparql = self._query_templates[template_name]
 
+        # Substitute {placeholder} tokens with kwargs values
+        for key, value in kwargs.items():
+            sparql = sparql.replace(f"{{{key}}}", str(value))
+
         # Provide namespace bindings for queries that may not declare all prefixes
         init_ns = {
             "kc": _KC,
@@ -475,6 +511,39 @@ class KnowledgeComplex:
         for row in results:
             rows.append([str(val) if val is not None else None for val in row])
         return pd.DataFrame(rows, columns=columns)
+
+    def query_ids(self, template_name: str, **kwargs: Any) -> set[str]:
+        """Execute a named SPARQL template and return the first column as element IDs.
+
+        Like :meth:`query` but returns a ``set[str]`` of element IDs
+        (namespace prefix stripped) instead of a DataFrame.  Useful for
+        obtaining subcomplexes from parameterized queries.
+
+        Parameters
+        ----------
+        template_name : str
+            Name of a registered query template.
+        **kwargs : Any
+            Substitution values for ``{placeholder}`` tokens in the template.
+
+        Returns
+        -------
+        set[str]
+
+        Raises
+        ------
+        UnknownQueryError
+            If template_name is not registered.
+        """
+        if template_name not in self._query_templates:
+            raise UnknownQueryError(
+                f"No query template named '{template_name}'. "
+                f"Available: {sorted(self._query_templates)}"
+            )
+        sparql = self._query_templates[template_name]
+        for key, value in kwargs.items():
+            sparql = sparql.replace(f"{{{key}}}", str(value))
+        return self._ids_from_query(sparql)
 
     def dump_graph(self) -> str:
         """Return the instance graph as a Turtle string."""

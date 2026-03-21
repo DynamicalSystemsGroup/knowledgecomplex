@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse.linalg import cg, splu
+from scipy.linalg import expm
 
 if TYPE_CHECKING:
     from knowledgecomplex.graph import KnowledgeComplex
@@ -52,6 +53,23 @@ class EdgeInfluence:
     absolute_influence: float  # ||v||₁
     penetration: float        # ||v||₂
     relative_influence: float  # Σv
+
+
+@dataclass
+class SweepCut:
+    """Result of a vertex sweep cut."""
+    vertices: set[str]
+    conductance: float
+    volume: int
+    boundary_edges: int
+
+
+@dataclass
+class EdgeSweepCut:
+    """Result of an edge sweep cut."""
+    edges: set[str]
+    conductance: float
+    volume: int
 
 
 @dataclass
@@ -642,3 +660,507 @@ def hodge_analysis(
         decompositions=decomps,
         influences=infls,
     )
+
+
+# ---------------------------------------------------------------------------
+# Graph Laplacian (on the 1-skeleton)
+# ---------------------------------------------------------------------------
+
+def graph_laplacian(kc: "KnowledgeComplex") -> sp.csr_matrix:
+    """
+    Compute the normalized graph Laplacian L = I - D⁻¹A on the 1-skeleton.
+
+    Parameters
+    ----------
+    kc : KnowledgeComplex
+
+    Returns
+    -------
+    scipy.sparse.csr_matrix
+        (n_vertices, n_vertices)
+    """
+    bm = boundary_matrices(kc)
+    nv = len(bm.vertex_index)
+    ne = len(bm.edge_index)
+
+    if nv == 0:
+        return sp.csr_matrix((0, 0), dtype=np.float64)
+
+    # Build adjacency matrix from B1
+    # A = |B1| |B1|ᵀ - D  but simpler: walk the edges directly
+    rows, cols, vals = [], [], []
+    for e_id, e_idx in bm.edge_index.items():
+        bnd = list(kc.boundary(e_id))
+        if len(bnd) == 2:
+            i = bm.vertex_index[bnd[0]]
+            j = bm.vertex_index[bnd[1]]
+            rows.extend([i, j])
+            cols.extend([j, i])
+            vals.extend([1.0, 1.0])
+
+    A = sp.csr_matrix((vals, (rows, cols)), shape=(nv, nv), dtype=np.float64)
+    degrees = np.array(A.sum(axis=1)).flatten()
+    degrees[degrees == 0] = 1.0
+    D_inv = sp.diags(1.0 / degrees, format="csr")
+
+    L = sp.eye(nv, format="csr") - D_inv @ A
+    return ((L + L.T) / 2).tocsr()
+
+
+def _adjacency_and_degrees(kc: "KnowledgeComplex", bm: BoundaryMatrices):
+    """Build adjacency matrix and degree dict for the 1-skeleton."""
+    nv = len(bm.vertex_index)
+    rows, cols, vals = [], [], []
+    for e_id in bm.edge_index:
+        bnd = list(kc.boundary(e_id))
+        if len(bnd) == 2:
+            i = bm.vertex_index[bnd[0]]
+            j = bm.vertex_index[bnd[1]]
+            rows.extend([i, j])
+            cols.extend([j, i])
+            vals.extend([1.0, 1.0])
+
+    A = sp.csr_matrix((vals, (rows, cols)), shape=(nv, nv), dtype=np.float64)
+    degrees = np.array(A.sum(axis=1)).flatten().astype(int)
+
+    # Build id->degree map
+    deg_map = {}
+    for vid, idx in bm.vertex_index.items():
+        deg_map[vid] = int(degrees[idx])
+
+    return A, deg_map
+
+
+# ---------------------------------------------------------------------------
+# Approximate PageRank (Andersen-Chung-Lang push algorithm)
+# ---------------------------------------------------------------------------
+
+def approximate_pagerank(
+    kc: "KnowledgeComplex",
+    seed: str,
+    alpha: float = 0.15,
+    epsilon: float = 1e-4,
+) -> tuple[dict[str, float], dict[str, float]]:
+    """
+    Compute approximate PageRank via the push algorithm.
+
+    Follows Andersen-Chung-Lang (FOCS 2006). Uses lazy random walk
+    W = (I + D⁻¹A)/2. Maintains invariant p + pr(α, r) = pr(α, χ_seed).
+
+    Parameters
+    ----------
+    kc : KnowledgeComplex
+    seed : str
+        Starting vertex.
+    alpha : float
+        Teleportation constant (higher = more local).
+    epsilon : float
+        Convergence threshold: stops when max r(u)/d(u) < epsilon.
+
+    Returns
+    -------
+    tuple[dict[str, float], dict[str, float]]
+        (p, r) — approximate PageRank vector and residual.
+    """
+    bm = boundary_matrices(kc)
+    _, deg_map = _adjacency_and_degrees(kc, bm)
+
+    # Neighbor lookup
+    neighbors: dict[str, list[str]] = {v: [] for v in bm.vertex_index}
+    for e_id in bm.edge_index:
+        bnd = list(kc.boundary(e_id))
+        if len(bnd) == 2:
+            neighbors[bnd[0]].append(bnd[1])
+            neighbors[bnd[1]].append(bnd[0])
+
+    p: dict[str, float] = {}
+    r: dict[str, float] = {seed: 1.0}
+
+    # Push loop
+    while True:
+        # Find vertex with max r(u)/d(u)
+        best_u = None
+        best_ratio = 0.0
+        for u, rv in r.items():
+            d = max(deg_map.get(u, 1), 1)
+            ratio = rv / d
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_u = u
+
+        if best_ratio < epsilon or best_u is None:
+            break
+
+        # Push operation at best_u
+        u = best_u
+        ru = r[u]
+        d_u = max(deg_map.get(u, 1), 1)
+
+        # Move alpha fraction to p
+        p[u] = p.get(u, 0) + alpha * ru
+
+        # Spread (1-alpha) fraction via lazy walk: half stays, half spreads
+        r[u] = (1 - alpha) * ru / 2
+
+        spread = (1 - alpha) * ru / (2 * d_u)
+        for v in neighbors.get(u, []):
+            r[v] = r.get(v, 0) + spread
+
+    return p, r
+
+
+# ---------------------------------------------------------------------------
+# Heat kernel PageRank
+# ---------------------------------------------------------------------------
+
+def heat_kernel_pagerank(
+    kc: "KnowledgeComplex",
+    seed: str,
+    t: float = 5.0,
+    num_terms: int = 30,
+) -> dict[str, float]:
+    """
+    Compute heat kernel PageRank ρ_{t,seed} on the 1-skeleton.
+
+    ρ_{t,u} = e^{-t} Σ_{k=0}^{N} (t^k / k!) χ_u W^k
+
+    where W = D⁻¹A is the random walk transition matrix.
+
+    Parameters
+    ----------
+    kc : KnowledgeComplex
+    seed : str
+        Starting vertex.
+    t : float
+        Heat parameter (temperature). Small t = local, large t = global.
+    num_terms : int
+        Number of terms in the Taylor expansion.
+
+    Returns
+    -------
+    dict[str, float]
+        Mapping from vertex IDs to PageRank values.
+    """
+    bm = boundary_matrices(kc)
+    nv = len(bm.vertex_index)
+
+    if nv == 0:
+        return {}
+
+    # Build W = D⁻¹A (random walk transition matrix)
+    rows, cols, vals = [], [], []
+    for e_id in bm.edge_index:
+        bnd = list(kc.boundary(e_id))
+        if len(bnd) == 2:
+            i = bm.vertex_index[bnd[0]]
+            j = bm.vertex_index[bnd[1]]
+            rows.extend([i, j])
+            cols.extend([j, i])
+            vals.extend([1.0, 1.0])
+
+    A = sp.csr_matrix((vals, (rows, cols)), shape=(nv, nv), dtype=np.float64)
+    degrees = np.array(A.sum(axis=1)).flatten()
+    degrees[degrees == 0] = 1.0
+    D_inv = sp.diags(1.0 / degrees, format="csr")
+    W = D_inv @ A
+
+    # Compute ρ = e^{-t} Σ (t^k / k!) χ_u W^k via Taylor expansion
+    seed_idx = bm.vertex_index[seed]
+    chi = np.zeros(nv)
+    chi[seed_idx] = 1.0
+
+    result = np.zeros(nv)
+    current = chi.copy()  # χ_u W^0 = χ_u
+    coeff = np.exp(-t)
+    factorial = 1.0
+
+    for k in range(num_terms):
+        if k > 0:
+            factorial *= k
+            current = current @ W.toarray()
+        result += (t ** k / factorial) * current
+
+    result *= np.exp(-t)
+
+    return {bm.index_vertex[i]: float(result[i]) for i in range(nv)}
+
+
+# ---------------------------------------------------------------------------
+# Sweep cut (graph version)
+# ---------------------------------------------------------------------------
+
+def sweep_cut(
+    kc: "KnowledgeComplex",
+    distribution: dict[str, float],
+    max_volume: int | None = None,
+) -> SweepCut:
+    """
+    Sweep a vertex distribution to find a cut with minimum conductance.
+
+    Sorts vertices by p(v)/d(v) descending, computes conductance of each
+    prefix set, returns the cut with minimum conductance.
+
+    Parameters
+    ----------
+    kc : KnowledgeComplex
+    distribution : dict[str, float]
+        Vertex distribution (e.g., from approximate_pagerank).
+    max_volume : int, optional
+        Maximum volume for the small side of the cut.
+
+    Returns
+    -------
+    SweepCut
+    """
+    bm = boundary_matrices(kc)
+    _, deg_map = _adjacency_and_degrees(kc, bm)
+
+    # Neighbor lookup
+    neighbors: dict[str, set[str]] = {v: set() for v in bm.vertex_index}
+    for e_id in bm.edge_index:
+        bnd = list(kc.boundary(e_id))
+        if len(bnd) == 2:
+            neighbors[bnd[0]].add(bnd[1])
+            neighbors[bnd[1]].add(bnd[0])
+
+    total_volume = sum(deg_map.values())
+
+    # Sort vertices by p(v)/d(v) descending
+    scored = []
+    for vid in bm.vertex_index:
+        pv = distribution.get(vid, 0.0)
+        dv = max(deg_map.get(vid, 1), 1)
+        scored.append((vid, pv / dv))
+    scored.sort(key=lambda x: -x[1])
+
+    # Sweep: incrementally build S, track boundary edges and volume
+    best_cut = SweepCut(vertices=set(), conductance=float("inf"), volume=0, boundary_edges=0)
+    S: set[str] = set()
+    vol_S = 0
+    boundary = 0
+
+    for vid, _ in scored:
+        d_v = deg_map.get(vid, 0)
+        # Update boundary: edges from vid to S decrease boundary,
+        # edges from vid to outside S increase boundary
+        edges_to_S = len(neighbors[vid] & S)
+        edges_to_outside = d_v - edges_to_S
+        boundary = boundary - edges_to_S + edges_to_outside
+
+        S.add(vid)
+        vol_S += d_v
+
+        if vol_S == 0 or vol_S >= total_volume:
+            continue
+
+        if max_volume is not None and vol_S > max_volume:
+            break
+
+        denom = min(vol_S, total_volume - vol_S)
+        cond = boundary / denom if denom > 0 else float("inf")
+
+        if cond < best_cut.conductance:
+            best_cut = SweepCut(
+                vertices=set(S),
+                conductance=cond,
+                volume=vol_S,
+                boundary_edges=boundary,
+            )
+
+    return best_cut
+
+
+# ---------------------------------------------------------------------------
+# Local partition (graph version)
+# ---------------------------------------------------------------------------
+
+def local_partition(
+    kc: "KnowledgeComplex",
+    seed: str,
+    target_conductance: float = 0.5,
+    target_volume: int | None = None,
+    method: str = "pagerank",
+) -> SweepCut:
+    """
+    Find a local partition near a seed vertex.
+
+    Parameters
+    ----------
+    kc : KnowledgeComplex
+    seed : str
+        Starting vertex.
+    target_conductance : float
+        Target conductance for setting alpha/t.
+    target_volume : int, optional
+        Maximum volume for the small side.
+    method : str
+        "pagerank" — approximate PageRank (Andersen-Chung-Lang).
+        "heat_kernel" — heat kernel PageRank (Chung).
+
+    Returns
+    -------
+    SweepCut
+    """
+    if method == "pagerank":
+        alpha = target_conductance ** 2 / (16 * np.log(sum(
+            max(kc.degree(v), 1) for v in kc.element_ids(type=None)
+            if kc._schema._types.get(kc.element(v).type, {}).get("kind") == "vertex"
+        ) + 1))
+        alpha = max(min(alpha, 0.5), 0.01)
+        p, r = approximate_pagerank(kc, seed, alpha=alpha)
+        return sweep_cut(kc, p, max_volume=target_volume)
+
+    elif method == "heat_kernel":
+        t = max(1.0, 4.0 / (target_conductance ** 2))
+        rho = heat_kernel_pagerank(kc, seed, t=t)
+        return sweep_cut(kc, rho, max_volume=target_volume)
+
+    else:
+        raise ValueError(f"Unknown method '{method}'. Use 'pagerank' or 'heat_kernel'.")
+
+
+# ---------------------------------------------------------------------------
+# Edge sweep cut (simplicial version)
+# ---------------------------------------------------------------------------
+
+def edge_sweep_cut(
+    kc: "KnowledgeComplex",
+    edge_distribution: np.ndarray,
+    bm: BoundaryMatrices | None = None,
+) -> EdgeSweepCut:
+    """
+    Sweep an edge distribution to find an edge partition with minimum conductance.
+
+    Sorts edges by |distribution(e)|/degree(e) descending, computes edge
+    conductance of each prefix. Edge conductance measures how many
+    vertex-boundary connections cross the partition.
+
+    Parameters
+    ----------
+    kc : KnowledgeComplex
+    edge_distribution : np.ndarray
+        (n_edges,) vector of edge values.
+    bm : BoundaryMatrices, optional
+        Pre-computed boundary matrices.
+
+    Returns
+    -------
+    EdgeSweepCut
+    """
+    if bm is None:
+        bm = boundary_matrices(kc)
+
+    ne = len(bm.edge_index)
+    if ne == 0:
+        return EdgeSweepCut(edges=set(), conductance=float("inf"), volume=0)
+
+    # Edge degree: number of faces incident to each edge + number of vertices
+    # Use coboundary size as a measure of "degree" for edges
+    edge_degrees = np.array(np.abs(bm.B2).sum(axis=1)).flatten() + 2  # +2 for boundary vertices
+
+    # Sort edges by |distribution(e)| / degree(e) descending
+    scored = []
+    for eid, idx in bm.edge_index.items():
+        val = abs(edge_distribution[idx])
+        deg = max(edge_degrees[idx], 1)
+        scored.append((eid, idx, val / deg))
+    scored.sort(key=lambda x: -x[2])
+
+    # Edge adjacency: two edges are adjacent if they share a vertex
+    # Build edge adjacency from B1
+    edge_adj: dict[str, set[str]] = {e: set() for e in bm.edge_index}
+    # For each vertex, collect incident edges
+    vertex_edges: dict[int, list[str]] = {}
+    for eid, eidx in bm.edge_index.items():
+        col = bm.B1[:, eidx]
+        for vidx in col.nonzero()[0]:
+            vertex_edges.setdefault(vidx, []).append(eid)
+
+    for vidx, eids in vertex_edges.items():
+        for i, e1 in enumerate(eids):
+            for e2 in eids[i + 1:]:
+                edge_adj[e1].add(e2)
+                edge_adj[e2].add(e1)
+
+    total_edge_vol = int(sum(edge_degrees))
+    S: set[str] = set()
+    vol_S = 0
+    boundary = 0
+
+    best = EdgeSweepCut(edges=set(), conductance=float("inf"), volume=0)
+
+    for eid, eidx, _ in scored:
+        d_e = int(edge_degrees[eidx])
+        adj_in_S = len(edge_adj[eid] & S)
+        adj_outside = len(edge_adj[eid]) - adj_in_S
+        boundary = boundary - adj_in_S + adj_outside
+
+        S.add(eid)
+        vol_S += d_e
+
+        if vol_S == 0 or vol_S >= total_edge_vol:
+            continue
+
+        denom = min(vol_S, total_edge_vol - vol_S)
+        cond = boundary / denom if denom > 0 else float("inf")
+
+        if cond < best.conductance:
+            best = EdgeSweepCut(edges=set(S), conductance=cond, volume=vol_S)
+
+    return best
+
+
+# ---------------------------------------------------------------------------
+# Edge local partition (simplicial version)
+# ---------------------------------------------------------------------------
+
+def edge_local_partition(
+    kc: "KnowledgeComplex",
+    seed_edge: str,
+    t: float = 5.0,
+    beta: float = 0.1,
+    method: str = "hodge_heat",
+    weights: dict[str, float] | None = None,
+) -> EdgeSweepCut:
+    """
+    Find a local edge partition using the Hodge Laplacian.
+
+    Parameters
+    ----------
+    kc : KnowledgeComplex
+    seed_edge : str
+        Starting edge.
+    t : float
+        Heat parameter (for hodge_heat method).
+    beta : float
+        Regularization (for hodge_pagerank method).
+    method : str
+        "hodge_heat" — e^{-tL₁} χ_e (heat kernel on edges).
+        "hodge_pagerank" — (βI + L₁)⁻¹ χ_e (existing edge PageRank).
+    weights : dict[str, float], optional
+        Simplex weights.
+
+    Returns
+    -------
+    EdgeSweepCut
+    """
+    bm = boundary_matrices(kc)
+    ne = len(bm.edge_index)
+
+    if ne == 0:
+        return EdgeSweepCut(edges=set(), conductance=float("inf"), volume=0)
+
+    L1 = hodge_laplacian(kc, weights=weights)
+
+    if method == "hodge_pagerank":
+        dist = edge_pagerank(kc, seed_edge, beta=beta, weights=weights)
+    elif method == "hodge_heat":
+        # Compute e^{-tL₁} χ_e via dense matrix exponential
+        L1_dense = L1.toarray()
+        heat = expm(-t * L1_dense)
+        seed_idx = bm.edge_index[seed_edge]
+        dist = heat[:, seed_idx]
+    else:
+        raise ValueError(f"Unknown method '{method}'. Use 'hodge_heat' or 'hodge_pagerank'.")
+
+    return edge_sweep_cut(kc, dist, bm=bm)
