@@ -47,62 +47,42 @@ except ImportError:
     _HAS_ANALYSIS = False
 
 __all__ = [
-    "SchemaBuilder",
-    "vocab",
-    "text",
-    "TextDescriptor",
-    "Codec",
-    "KnowledgeComplex",
-    "Element",
+    # Schema authoring
+    "SchemaBuilder", "vocab", "text", "TextDescriptor", "Codec",
+    # Instance management
+    "KnowledgeComplex", "Element",
+    # Filtrations
     "Filtration",
-    "ValidationError",
-    "SchemaError",
-    "UnknownQueryError",
-    "save_graph",
-    "load_graph",
-    "dump_graph",
-    "to_networkx",
-    "verify_networkx",
-    "type_color_map",
-    "plot_hasse",
-    "plot_hasse_star",
-    "plot_hasse_skeleton",
-    "plot_geometric",
-    "plot_geometric_interactive",
-    "plot_complex",
-    "plot_star",
-    "plot_skeleton",
-    "find_cliques",
-    "infer_faces",
-    "fill_cliques",
-    "ComplexDiff",
-    "ComplexSequence",
-    "MarkdownCodec",
-    "verify_documents",
+    # Exceptions
+    "ValidationError", "SchemaError", "UnknownQueryError",
+    # File I/O
+    "save_graph", "load_graph", "dump_graph",
+    # Visualization — Hasse diagrams
+    "to_networkx", "verify_networkx", "type_color_map",
+    "plot_hasse", "plot_hasse_star", "plot_hasse_skeleton",
+    # Visualization — geometric realization
+    "plot_geometric", "plot_geometric_interactive",
+    # Visualization — deprecated aliases
+    "plot_complex", "plot_star", "plot_skeleton",
+    # Clique inference
+    "find_cliques", "infer_faces", "fill_cliques",
+    # Diffs and sequences
+    "ComplexDiff", "ComplexSequence",
+    # Codecs
+    "MarkdownCodec", "verify_documents",
 ]
 
 if _HAS_ANALYSIS:
     __all__ += [
-        "boundary_matrices",
-        "betti_numbers",
-        "euler_characteristic",
-        "hodge_laplacian",
-        "edge_pagerank",
-        "edge_pagerank_all",
-        "hodge_decomposition",
-        "edge_influence",
-        "hodge_analysis",
-        "BoundaryMatrices",
-        "HodgeDecomposition",
-        "EdgeInfluence",
+        # Algebraic topology
+        "boundary_matrices", "betti_numbers", "euler_characteristic",
+        "hodge_laplacian", "edge_pagerank", "edge_pagerank_all",
+        "hodge_decomposition", "edge_influence", "hodge_analysis",
+        "BoundaryMatrices", "HodgeDecomposition", "EdgeInfluence",
         "HodgeAnalysisResults",
-        "graph_laplacian",
-        "approximate_pagerank",
-        "heat_kernel_pagerank",
-        "sweep_cut",
-        "local_partition",
-        "edge_sweep_cut",
-        "edge_local_partition",
-        "SweepCut",
-        "EdgeSweepCut",
+        # Graph analysis
+        "graph_laplacian", "approximate_pagerank", "heat_kernel_pagerank",
+        "sweep_cut", "local_partition",
+        "edge_sweep_cut", "edge_local_partition",
+        "SweepCut", "EdgeSweepCut",
     ]

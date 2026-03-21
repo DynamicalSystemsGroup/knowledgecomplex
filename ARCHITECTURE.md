@@ -162,5 +162,11 @@ User namespaces are set via `SchemaBuilder(namespace="aaa")`. The URI base `http
 | `knowledgecomplex/schema.py` | Python API — schema authoring | `SchemaBuilder` DSL: `add_*_type`, `dump_owl`, `dump_shacl`, `export`, `load` |
 | `knowledgecomplex/graph.py` | Python API — instance I/O | `KnowledgeComplex`: `add_vertex`, `add_edge`, `add_face`, `query`, `dump_graph`, `export`, `load` |
 | `knowledgecomplex/exceptions.py` | Public exceptions | `ValidationError`, `SchemaError`, `UnknownQueryError` |
-| `knowledgecomplex/queries/vertices.sparql` | Framework SPARQL | Return all vertices and their types |
-| `knowledgecomplex/queries/coboundary.sparql` | Framework SPARQL | Inverse boundary operator |
+| `knowledgecomplex/io.py` | Python API — serialization | `save_graph`, `load_graph`, `dump_graph` — multi-format file I/O (Turtle, JSON-LD, N-Triples) |
+| `knowledgecomplex/viz.py` | Python API — visualization | Hasse diagrams (`plot_hasse`), geometric realization (`plot_geometric`), `to_networkx`, `verify_networkx` |
+| `knowledgecomplex/analysis.py` | Python API — algebraic topology | `betti_numbers`, `euler_characteristic`, `hodge_laplacian`, `edge_pagerank` (optional: numpy, scipy) |
+| `knowledgecomplex/clique.py` | Python API — clique inference | `find_cliques`, `infer_faces`, `fill_cliques` — flagification and typed face inference |
+| `knowledgecomplex/filtration.py` | Python API — filtrations | `Filtration` — nested subcomplex sequences, birth tracking, `from_function` |
+| `knowledgecomplex/diff.py` | Python API — diffs and sequences | `ComplexDiff`, `ComplexSequence` — time-varying complexes with SPARQL UPDATE export/import |
+| `knowledgecomplex/codecs/markdown.py` | Codec — markdown files | `MarkdownCodec` — YAML frontmatter + section-based round-trip; `verify_documents` |
+| `knowledgecomplex/queries/*.sparql` | Framework SPARQL | 7 templates: vertices, coboundary, boundary, star, closure, skeleton, degree |

@@ -29,6 +29,9 @@ exs:actorShape a sh:NodeShape ;
             sh:path ex:name ] ;
     sh:targetClass ex:actor .
 
+exs:operationShape a sh:NodeShape ;
+    sh:targetClass ex:operation .
+
 exs:performsShape a sh:NodeShape ;
     sh:property [ sh:datatype xsd:string ;
             sh:in ( "lead" "support" ) ;
@@ -44,6 +47,9 @@ exs:producesShape a sh:NodeShape ;
             sh:minCount 1 ;
             sh:path ex:mode ] ;
     sh:targetClass ex:produces .
+
+exs:productionShape a sh:NodeShape ;
+    sh:targetClass ex:production .
 
 exs:requiresShape a sh:NodeShape ;
     sh:property [ sh:datatype xsd:string ;

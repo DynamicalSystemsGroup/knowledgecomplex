@@ -65,4 +65,17 @@ df = kc.query("vertices")   # built-in SPARQL template
 print(df)
 ```
 
-See [`examples/quickstart.py`](https://github.com/blockscience/knowledgecomplex/blob/main/examples/quickstart.py) to load a pre-built complex and discover hidden structure. See [`examples/construction.py`](https://github.com/blockscience/knowledgecomplex/blob/main/examples/construction.py) for schema construction from scratch.
+See the [examples/](https://github.com/blockscience/knowledgecomplex/tree/main/examples) directory for 10 runnable examples.
+
+## API Reference
+
+- [Schema authoring](api/schema.md) — `SchemaBuilder`, `vocab`, `text`, type inheritance, constraint escalation
+- [Instance management](api/graph.md) — `KnowledgeComplex`, `Element`, topological queries, SPARQL templates
+- [Visualization](api/viz.md) — Hasse diagrams, geometric realization, NetworkX export
+- [Algebraic topology](api/analysis.md) — Betti numbers, Hodge Laplacian, edge PageRank
+- [Clique inference](api/clique.md) — `find_cliques`, `infer_faces`, `fill_cliques`
+- [Filtrations](api/filtration.md) — nested subcomplex sequences, birth tracking
+- [Diffs and sequences](api/diff.md) — `ComplexDiff`, `ComplexSequence`, SPARQL UPDATE export/import
+- [File I/O](api/io.md) — multi-format save/load (Turtle, JSON-LD, N-Triples)
+- [Codecs](api/codecs.md) — `MarkdownCodec` for YAML+markdown round-trip
+- [Exceptions](api/exceptions.md) — `ValidationError`, `SchemaError`, `UnknownQueryError`

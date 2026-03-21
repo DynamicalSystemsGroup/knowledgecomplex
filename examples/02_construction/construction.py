@@ -11,20 +11,11 @@ Run:
     python examples/02_construction/construction.py
 """
 
-from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text
+from knowledgecomplex import KnowledgeComplex
+from knowledgecomplex.ontologies import operations
 
-# 1. Define a schema
-sb = SchemaBuilder(namespace="ex")
-sb.add_vertex_type("actor",    attributes={"name": text()})
-sb.add_vertex_type("activity", attributes={"name": text()})
-sb.add_vertex_type("resource", attributes={"name": text()})
-sb.add_edge_type("performs",     attributes={"role": vocab("lead", "support")})
-sb.add_edge_type("requires",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("produces",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("accesses",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("responsible", attributes={"level": vocab("owner", "steward")})
-sb.add_face_type("operation")
-sb.add_face_type("production")
+# 1. Load the pre-built operations ontology
+sb = operations.schema(namespace="ex")
 
 # 2. Build an instance
 kc = KnowledgeComplex(schema=sb)

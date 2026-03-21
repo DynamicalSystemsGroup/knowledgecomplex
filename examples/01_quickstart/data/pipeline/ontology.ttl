@@ -25,8 +25,14 @@ ex:mode a owl:DatatypeProperty ;
 ex:name a owl:DatatypeProperty ;
     rdfs:range xsd:string .
 
+ex:operation a owl:Class ;
+    rdfs:subClassOf kc:Face .
+
 ex:produces a owl:Class ;
     rdfs:subClassOf kc:Edge .
+
+ex:production a owl:Class ;
+    rdfs:subClassOf kc:Face .
 
 ex:requires a owl:Class ;
     rdfs:subClassOf kc:Edge .
@@ -42,15 +48,6 @@ ex:role a owl:DatatypeProperty ;
 <https://example.org/kc> a owl:Ontology ;
     rdfs:label "Knowledge Complex Core Ontology" ;
     rdfs:comment "Abstract topological backbone: Element, Vertex, Edge, Face, Complex." .
-
-kc:Face a owl:Class ;
-    rdfs:label "Face" ;
-    rdfs:comment "Abstract 2-simplex. Boundary: exactly 3 edges. Concrete types must subclass this." ;
-    rdfs:subClassOf [ a owl:Restriction ;
-            owl:onClass kc:Edge ;
-            owl:onProperty kc:boundedBy ;
-            owl:qualifiedCardinality "3"^^xsd:nonNegativeInteger ],
-        kc:Element .
 
 kc:hasElement a owl:ObjectProperty ;
     rdfs:label "hasElement" ;
@@ -78,6 +75,15 @@ kc:Complex a owl:Class ;
         closed under the boundary operator. If a simplex is in the complex, all its
         boundary elements must also be in the complex. Topological validity of the
         composition is enforced by SHACL (see kcs:ComplexShape).""" .
+
+kc:Face a owl:Class ;
+    rdfs:label "Face" ;
+    rdfs:comment "Abstract 2-simplex. Boundary: exactly 3 edges. Concrete types must subclass this." ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:onClass kc:Edge ;
+            owl:onProperty kc:boundedBy ;
+            owl:qualifiedCardinality "3"^^xsd:nonNegativeInteger ],
+        kc:Element .
 
 kc:boundedBy a owl:ObjectProperty ;
     rdfs:label "boundedBy" ;

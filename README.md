@@ -68,20 +68,120 @@ print(df)
 print(kc.dump_graph())       # Turtle string
 ```
 
-See [`examples/quickstart.py`](examples/quickstart.py) to load a pre-built complex, discover triangles via clique detection, and extend it with faces. See [`examples/construction.py`](examples/construction.py) for a runnable version of the schema construction above.
+See [`examples/`](examples/) for 10 runnable examples covering all features below.
+
+## Topological queries
+
+Every `KnowledgeComplex` has methods for the standard simplicial complex operations.
+All return `set[str]` for natural set algebra:
+
+```python
+kc.boundary("face-1")            # {e1, e2, e3} — direct boundary
+kc.star("alice")                  # all simplices containing alice
+kc.link("alice")                  # Cl(St) \ St — the horizon around alice
+kc.closure({"e1", "e2"})          # smallest subcomplex containing these edges
+kc.degree("alice")                # number of incident edges
+
+# Set algebra composes naturally
+shared = kc.star("alice") & kc.star("bob")
+```
+
+All operators accept an optional `type=` filter for OWL-subclass-aware filtering.
+
+## Clique inference
+
+Discover higher-order structure from the edge graph:
+
+```python
+from knowledgecomplex import find_cliques, infer_faces
+
+triangles = find_cliques(kc, k=3)          # pure query — what triangles exist?
+infer_faces(kc, "operation")               # fill in all triangles as typed faces
+infer_faces(kc, "team", edge_type="collab") # restrict to specific edge types
+```
+
+## Visualization
+
+Two complementary views — Hasse diagrams (all elements as nodes, boundary as directed arrows) and geometric realization (vertices as 3D points, edges as lines, faces as filled triangles):
+
+```python
+from knowledgecomplex import plot_hasse, plot_geometric
+
+fig, ax = plot_hasse(kc)          # directed boundary graph, type-colored
+fig, ax = plot_geometric(kc)      # 3D triangulation with matplotlib
+```
+
+Export to NetworkX for further analysis:
+
+```python
+from knowledgecomplex import to_networkx, verify_networkx
+
+G = to_networkx(kc)     # nx.DiGraph with exact degree invariants
+verify_networkx(G)       # validate cardinality + closed-triangle constraints
+```
+
+## Algebraic topology
+
+Betti numbers, Euler characteristic, Hodge Laplacian, and edge PageRank (requires `pip install knowledgecomplex[analysis]`):
+
+```python
+from knowledgecomplex import betti_numbers, euler_characteristic, edge_pagerank
+
+betti = betti_numbers(kc)          # [beta_0, beta_1, beta_2]
+chi = euler_characteristic(kc)     # V - E + F
+pr = edge_pagerank(kc, "e1")       # personalized edge PageRank vector
+```
+
+## Filtrations and time-varying complexes
+
+Filtrations model strictly growing subcomplexes. Diffs model arbitrary add/remove sequences:
+
+```python
+from knowledgecomplex import Filtration, ComplexDiff, ComplexSequence
+
+filt = Filtration(kc)
+filt.append_closure({"v1", "v2", "e12"})    # Q0: founders
+filt.append_closure({"v3", "e23", "face1"}) # Q1: first triangle
+print(filt.birth("face1"))                  # 1
+
+diff = ComplexDiff().add_vertex("eve", type="Person").remove("old-edge")
+diff.apply(kc)                              # mutate the complex
+print(diff.to_sparql(kc))                   # export as SPARQL UPDATE
+```
+
+## I/O and codecs
+
+Multi-format serialization and round-trip with external files:
+
+```python
+from knowledgecomplex import save_graph, load_graph, MarkdownCodec
+
+save_graph(kc, "data.jsonld", format="json-ld")
+load_graph(kc, "data.ttl")                  # additive loading
+
+codec = MarkdownCodec(frontmatter_attrs=["name"], section_attrs=["notes"])
+kc.register_codec("Paper", codec)
+kc.element("paper-1").compile()             # KC -> markdown file
+kc.element("paper-1").decompile()           # markdown file -> KC
+```
+
+## Constraint escalation
+
+Escalate topological queries to SHACL constraints enforced on every write:
+
+```python
+sb.add_topological_constraint(
+    "requirement", "coboundary",
+    target_type="verification",
+    predicate="min_count", min_count=1,
+    message="Every requirement must have at least one verification edge",
+)
+```
 
 ## The `kc:uri` attribute
 
-Every element (vertex, edge, or face) can carry an optional `kc:uri` property pointing to its source file:
-
-```python
-kc.add_vertex("alice", type="actor", name="Alice",
-            uri="file:///actors/alice.md")
-kc.add_edge("e1", type="performs", vertices={"alice", "etl-run"},
-            role="lead", uri="file:///edges/e1.md")
-```
-
-SHACL enforces at-most-one `kc:uri` per element. This is useful for domain applications where each element corresponds to an actual document or record.
+Every element can carry an optional `kc:uri` property pointing to its source file.
+SHACL enforces at-most-one `kc:uri` per element.
 
 ## Architecture
 

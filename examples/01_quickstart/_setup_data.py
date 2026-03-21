@@ -7,18 +7,11 @@ Creates examples/01_quickstart/data/pipeline/ with ontology.ttl, shapes.ttl, ins
 (a data pipeline with actors, activities, resources, and edges — but no faces).
 """
 
-from knowledgecomplex import SchemaBuilder, KnowledgeComplex, vocab, text
+from knowledgecomplex import KnowledgeComplex
+from knowledgecomplex.ontologies import operations
 
-# Schema: vertex and edge types only (no faces — those are discovered later)
-sb = SchemaBuilder(namespace="ex")
-sb.add_vertex_type("actor",    attributes={"name": text()})
-sb.add_vertex_type("activity", attributes={"name": text()})
-sb.add_vertex_type("resource", attributes={"name": text()})
-sb.add_edge_type("performs",     attributes={"role": vocab("lead", "support")})
-sb.add_edge_type("requires",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("produces",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("accesses",    attributes={"mode": vocab("read", "write")})
-sb.add_edge_type("responsible", attributes={"level": vocab("owner", "steward")})
+# Use the pre-built operations ontology (no faces — those are discovered later)
+sb = operations.schema(namespace="ex")
 
 # Instance: 4 vertices, 5 edges forming 2 triangles (but no faces declared)
 kc = KnowledgeComplex(schema=sb)
