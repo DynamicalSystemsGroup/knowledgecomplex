@@ -12,7 +12,10 @@ Fixtures:
 """
 
 import pytest
-import numpy as np
+
+np = pytest.importorskip("numpy")
+scipy = pytest.importorskip("scipy")
+
 from numpy.testing import assert_allclose
 
 from knowledgecomplex.schema import SchemaBuilder, vocab
