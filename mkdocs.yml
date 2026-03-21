@@ -25,4 +25,11 @@ nav:
   - API Reference:
       - Schema: api/schema.md
       - Graph: api/graph.md
+      - Visualization: api/viz.md
+      - Algebraic Topology: api/analysis.md
+      - Clique Inference: api/clique.md
+      - Filtrations: api/filtration.md
+      - Diffs & Sequences: api/diff.md
+      - File I/O: api/io.md
+      - Codecs: api/codecs.md
       - Exceptions: api/exceptions.md
