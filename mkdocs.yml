@@ -30,6 +30,7 @@ nav:
       - Algebraic Topology: api/analysis.md
       - Clique Inference: api/clique.md
       - Filtrations: api/filtration.md
+      - Parametric Sequences: api/parametric.md
       - Diffs & Sequences: api/diff.md
       - File I/O: api/io.md
       - Codecs: api/codecs.md

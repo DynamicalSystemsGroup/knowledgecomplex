@@ -12,3 +12,4 @@ venv/
 MANIFEST
 htmlcov/
 .coverage
+site/

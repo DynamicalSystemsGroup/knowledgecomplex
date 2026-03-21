@@ -69,74 +69,50 @@ kc.add_face("squad-1", type="Squad", boundary=["w-ac", "w-cd", "w-ad"])
 print(f"Built timeline: {len(kc.element_ids())} total elements across all time")
 print()
 
-# ── Manual parameterized sweep ─────────────────────────────────────────────
+# ── Parameterized sweep using ParametricSequence ──────────────────────────
 
-# Since we store active_from/active_until as string attributes, we can
-# query for elements active at a specific time by comparing attribute values.
+from knowledgecomplex import ParametricSequence
+
+def active_filter(elem, t):
+    """Element is active at time t if active_from <= t < active_until."""
+    af = elem.attrs.get("active_from", "0")
+    au = elem.attrs.get("active_until", "9999")
+    return af <= t < au
+
+seq = ParametricSequence(kc, values=["1", "2", "3", "4", "5"], filter=active_filter)
 
 print("=== Active subcomplex at each quarter ===")
-for t in ["1", "2", "3", "4", "5"]:
-    # Get active people at time t
-    active_people = set()
-    for pid in kc.element_ids(type="Person"):
-        elem = kc.element(pid)
-        af = elem.attrs.get("active_from", "0")
-        au = elem.attrs.get("active_until", "9999")
-        if af <= t < au:
-            active_people.add(pid)
+for t, active in seq:
+    print(f"  Q{t}: {len(active)} elements  "
+          f"(valid subcomplex: {seq.subcomplex_at(seq.values.index(t))})")
+    print(f"       {sorted(active)}")
 
-    # Get active edges at time t
-    active_edges = set()
-    for eid in kc.element_ids(type="WorksWith"):
-        elem = kc.element(eid)
-        af = elem.attrs.get("active_from", "0")
-        au = elem.attrs.get("active_until", "9999")
-        if af <= t < au:
-            # Only include if both endpoints are active
-            boundary = kc.boundary(eid)
-            if boundary <= active_people:
-                active_edges.add(eid)
-
-    # Get active faces
-    active_faces = set()
-    for fid in kc.element_ids(type="Squad"):
-        boundary = kc.boundary(fid)
-        if boundary <= active_edges:
-            active_faces.add(fid)
-
-    active = active_people | active_edges | active_faces
-    is_sub = kc.is_subcomplex(active)
-
-    print(f"  Q{t}: {len(active_people)} people, "
-          f"{len(active_edges)} collabs, "
-          f"{len(active_faces)} squads  "
-          f"(valid subcomplex: {is_sub})")
-    print(f"       people: {sorted(active_people)}")
-
-    # Show who's new and who left
-    if t != "1":
-        prev_t = str(int(t) - 1)
-        prev_people = set()
-        for pid in kc.element_ids(type="Person"):
-            elem = kc.element(pid)
-            af = elem.attrs.get("active_from", "0")
-            au = elem.attrs.get("active_until", "9999")
-            if af <= prev_t < au:
-                prev_people.add(pid)
-        joined = active_people - prev_people
-        left = prev_people - active_people
-        if joined:
-            print(f"       joined: {sorted(joined)}")
-        if left:
-            print(f"       left:   {sorted(left)}")
+    i = seq.values.index(t)
+    new = seq.new_at(i)
+    removed = seq.removed_at(i)
+    if new:
+        print(f"       joined:  {sorted(new)}")
+    if removed:
+        print(f"       left:    {sorted(removed)}")
     print()
+
+# ── Lifecycle queries ──────────────────────────────────────────────────────
+
+print("=== Lifecycle ===")
+for person in ["alice", "bob", "carol", "dave", "eve"]:
+    birth = seq.birth(person)
+    death = seq.death(person)
+    active = seq.active_at(person)
+    print(f"  {person:6s}  birth=Q{birth}  death={'Q'+death if death else 'still active':14s}  active={active}")
+print()
 
 # ── Key insight ────────────────────────────────────────────────────────────
 
-print("=== Key insight ===")
-print("  This is NOT a filtration — the subcomplex at Q4 is not a superset")
-print("  of Q3 (bob left). But each time-slice is a valid subcomplex,")
-print("  and the full complex contains the complete history.")
+print(f"=== Key insight ===")
+print(f"  is_monotone: {seq.is_monotone}")
+print(f"  This is NOT a filtration — bob leaves at Q3, so Q3 is not a")
+print(f"  superset of Q2. But the complex holds the complete history,")
+print(f"  and the parameterized filter slices it at any time.")
 print()
-print("  The complex is the territory; the time-slice queries are the maps.")
+print(f"  The complex is the territory; the parameterized filter is the map.")
 print("Done.")
