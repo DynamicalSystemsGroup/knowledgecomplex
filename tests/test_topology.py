@@ -1,4 +1,4 @@
-"""
+r"""
 tests/test_topology.py
 
 Tests for topological query methods on KnowledgeComplex:
