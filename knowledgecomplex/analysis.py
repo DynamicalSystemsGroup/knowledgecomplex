@@ -525,7 +525,8 @@ def hodge_decomposition(
     if weights is not None:
         w0_sqrt = sp.diags(np.sqrt(np.array(W0.diagonal())), format="csr")
         w2_sqrt = sp.diags(np.sqrt(np.array(W2.diagonal())), format="csr") if W2.shape[0] > 0 else W2
-        grad_op = w0_sqrt @ bm.B1.T if bm.B1.shape[1] > 0 else bm.B1.T
+        # B1.T is (ne × nv), W0_sqrt is (nv × nv) → B1.T @ W0_sqrt is (ne × nv)
+        grad_op = bm.B1.T @ w0_sqrt if bm.B1.shape[1] > 0 else bm.B1.T
         curl_op = bm.B2 @ w2_sqrt if bm.B2.shape[1] > 0 else bm.B2
     else:
         grad_op = bm.B1.T
