@@ -1,7 +1,7 @@
 site_name: knowledgecomplex
 site_url: https://dynamicalsystemsgroup.github.io/knowledgecomplex
-repo_url: https://github.com/DynamicalSystemsGroup/knowledgecomplex
-repo_name: DynamicalSystemsGroup/knowledgecomplex
+repo_url: https://github.com/dynamicalsystemsgroup/knowledgecomplex
+repo_name: dynamicalsystemsgroup/knowledgecomplex
 
 theme:
   name: material
