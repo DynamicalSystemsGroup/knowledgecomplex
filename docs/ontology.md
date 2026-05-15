@@ -24,8 +24,8 @@ These constraints use `sh:sparql` validators because they require cross-individu
 
 ## Interoperability
 
-Because KC stores all data as standard RDF and enforces constraints via W3C SHACL, instance graphs are natively compatible with RDF-based model management systems such as [Flexo MMS](https://github.com/Open-MBEE/flexo-mms-deployment) from the [OpenMBEE](https://www.openmbee.org/) community. JSON-LD export (`dump_graph(format="json-ld")`) provides the primary bridge format. See the [Interoperability section of ARCHITECTURE.md](https://github.com/blockscience/knowledgecomplex/blob/main/ARCHITECTURE.md#interoperability-flexo-mms-and-openmbee) for integration patterns.
+Because KC stores all data as standard RDF and enforces constraints via W3C SHACL, instance graphs are natively compatible with RDF-based model management systems such as [Flexo MMS](https://github.com/Open-MBEE/flexo-mms-deployment) from the [OpenMBEE](https://www.openmbee.org/) community. JSON-LD export (`dump_graph(format="json-ld")`) provides the primary bridge format. See the [Interoperability section of ARCHITECTURE.md](https://github.com/dynamicalsystemsgroup/knowledgecomplex/blob/main/ARCHITECTURE.md#interoperability-flexo-mms-and-openmbee) for integration patterns.
 
 ## Design rationale
 
-See [ARCHITECTURE.md](https://github.com/blockscience/knowledgecomplex/blob/main/ARCHITECTURE.md) for the full 2x2 responsibility map and design decisions.
+See [ARCHITECTURE.md](https://github.com/dynamicalsystemsgroup/knowledgecomplex/blob/main/ARCHITECTURE.md) for the full 2x2 responsibility map and design decisions.
