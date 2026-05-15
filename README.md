@@ -219,7 +219,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design rationale.
 
 ## Domain model example
 
-This package is used by [mtg-kc](https://github.com/DynamicalSystemsGroup/mtg-kc) as a demonstration application, and by [assurances-audits-accountability](https://github.com/DynamicalSystemsGroup/assurances-audits-accountability) as a domain-specific knowledge complex for typed document assurance.
+This package is used by [mtg-kc](https://github.com/mzargham/mtg-kc) as a demonstration application, and by [assurances-audits-accountability](https://github.com/DynamicalSystemsGroup/assurances-audits-accountability) as a domain-specific knowledge complex for typed document assurance.
 
 ## License
 
