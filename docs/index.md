@@ -21,7 +21,7 @@ pip install knowledgecomplex
 Or from source:
 
 ```bash
-git clone https://github.com/BlockScience/knowledgecomplex.git
+git clone https://github.com/DynamicalSystemsGroup/knowledgecomplex.git
 cd knowledgecomplex
 pip install -e ".[dev]"
 ```
@@ -57,14 +57,14 @@ fig, ax = plot_hasse(kc)
 fig, ax = plot_geometric(kc)
 ```
 
-For building schemas from scratch, see [`examples/02_construction/`](https://github.com/blockscience/knowledgecomplex/tree/main/examples/02_construction). Three pre-built ontologies ship with the package:
+For building schemas from scratch, see [`examples/02_construction/`](https://github.com/DynamicalSystemsGroup/knowledgecomplex/tree/main/examples/02_construction). Three pre-built ontologies ship with the package:
 
 ```python
 from knowledgecomplex.ontologies import operations, brand, research
 sb = brand.schema()   # audience/theme with resonance, interplay, overlap
 ```
 
-See the [examples/](https://github.com/blockscience/knowledgecomplex/tree/main/examples) directory for 11 runnable examples.
+See the [examples/](https://github.com/DynamicalSystemsGroup/knowledgecomplex/tree/main/examples) directory for 11 runnable examples.
 
 ## API Reference
 
