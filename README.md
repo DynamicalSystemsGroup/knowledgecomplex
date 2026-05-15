@@ -21,7 +21,7 @@ pip install knowledgecomplex
 Or from source:
 
 ```bash
-git clone https://github.com/BlockScience/knowledgecomplex.git
+git clone https://github.com/DynamicalSystemsGroup/knowledgecomplex.git
 cd knowledgecomplex
 pip install -e ".[dev]"
 ```
@@ -219,7 +219,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design rationale.
 
 ## Domain model example
 
-This package is used by [mtg-kc](https://github.com/BlockScience/mtg-kc) as a demonstration application, and by [assurances-audits-accountability](https://github.com/BlockScience/assurances-audits-accountability) as a domain-specific knowledge complex for typed document assurance.
+This package is used by [mtg-kc](https://github.com/DynamicalSystemsGroup/mtg-kc) as a demonstration application, and by [assurances-audits-accountability](https://github.com/DynamicalSystemsGroup/assurances-audits-accountability) as a domain-specific knowledge complex for typed document assurance.
 
 ## License
 
