@@ -123,13 +123,36 @@ class Element:
 
     @property
     def attrs(self) -> dict[str, Any]:
+        """
+        Attributes as the schema declares them.
+
+        An attribute declared ``multiple=True`` comes back as a sorted list of its
+        values, even when it currently holds one; every other attribute comes back
+        as a single string. Sorting matters because the underlying triple store has
+        no inherent order, so without it repeated reads could disagree.
+        """
         ns_str = self._kc._schema._base_iri
+        try:
+            multivalued = self._kc._schema.multivalued_attributes(self.type)
+        except Exception:
+            # An element whose type is unregistered or absent still has attributes
+            # worth reading; fall back to treating them all as single-valued.
+            multivalued = frozenset()
+
         attrs: dict[str, Any] = {}
         for _, p, o in self._kc._instance_graph.triples((self._iri, None, None)):
             p_str = str(p)
-            if p_str.startswith(ns_str):
-                attr_name = p_str[len(ns_str):]
+            if not p_str.startswith(ns_str):
+                continue
+            attr_name = p_str[len(ns_str):]
+            if attr_name in multivalued:
+                attrs.setdefault(attr_name, []).append(str(o))
+            else:
                 attrs[attr_name] = str(o)
+
+        for attr_name in multivalued:
+            if attr_name in attrs:
+                attrs[attr_name].sort()
         return attrs
 
     def compile(self) -> None:

@@ -196,3 +196,43 @@ class TestElements:
         assert len(elems) == 1
         assert elems[0].attrs["criteria"] == "Accuracy"
         assert elems[0].attrs["title"] == "Guide A"
+
+
+class TestMultivaluedAttrs:
+    """An attribute declared multiple=True is a set of values, not one of them.
+
+    Before this, Element.attrs overwrote each value with the next as it walked the
+    triples, so a caller got an arbitrary single value and no indication that the
+    others existed.
+    """
+
+    @pytest.fixture
+    def kc(self):
+        sb = SchemaBuilder(namespace="demo")
+        sb.add_vertex_type(
+            "Doc",
+            attributes={"tag": text(multiple=True), "title": text()},
+        )
+        kc = KnowledgeComplex(schema=sb)
+        kc.add_vertex("d1", type="Doc", title="Guide", tag=["b", "a", "c"])
+        kc.add_vertex("d2", type="Doc", title="Note", tag=["only"])
+        return kc
+
+    def test_all_values_are_returned(self, kc):
+        assert kc.element("d1").attrs["tag"] == ["a", "b", "c"]
+
+    def test_a_single_value_is_still_a_list(self, kc):
+        """The type does not depend on how many values happen to be recorded."""
+        assert kc.element("d2").attrs["tag"] == ["only"]
+
+    def test_single_valued_attributes_are_unchanged(self, kc):
+        assert kc.element("d1").attrs["title"] == "Guide"
+
+    def test_repeated_reads_agree(self, kc):
+        """The triple store has no inherent order, so the list is sorted."""
+        assert kc.element("d1").attrs == kc.element("d1").attrs
+
+    def test_schema_reports_which_attributes_are_multivalued(self):
+        sb = SchemaBuilder(namespace="demo")
+        sb.add_vertex_type("Doc", attributes={"tag": text(multiple=True), "title": text()})
+        assert sb.multivalued_attributes("Doc") == {"tag"}
