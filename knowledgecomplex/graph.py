@@ -134,9 +134,12 @@ class Element:
         ns_str = self._kc._schema._base_iri
         try:
             multivalued = self._kc._schema.multivalued_attributes(self.type)
-        except Exception:
-            # An element whose type is unregistered or absent still has attributes
-            # worth reading; fall back to treating them all as single-valued.
+        except (ValueError, SchemaError):
+            # Only two things are expected here: ValueError from .type when the
+            # element carries no user type, and SchemaError when that type is not
+            # registered. Either way its attributes are still worth reading, so
+            # fall back to treating them all as single-valued. Anything else is a
+            # real bug and should surface rather than be swallowed.
             multivalued = frozenset()
 
         attrs: dict[str, Any] = {}

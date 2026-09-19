@@ -236,3 +236,26 @@ class TestMultivaluedAttrs:
         sb = SchemaBuilder(namespace="demo")
         sb.add_vertex_type("Doc", attributes={"tag": text(multiple=True), "title": text()})
         assert sb.multivalued_attributes("Doc") == {"tag"}
+
+    def test_an_element_with_no_registered_type_still_reads(self):
+        """The fallback the narrowed except clause exists for.
+
+        An element whose type is absent or unregistered has attributes worth
+        reading; it simply cannot be told which of them are multivalued.
+        """
+        sb = SchemaBuilder(namespace="demo")
+        sb.add_vertex_type("Doc", attributes={"tag": text(multiple=True)})
+        kc = KnowledgeComplex(schema=sb)
+        kc.add_vertex("d1", type="Doc", tag=["a"])
+
+        stranger = Element(kc, "not-an-element")
+        assert stranger.attrs == {}
+
+    def test_an_unexpected_error_is_not_swallowed(self, kc, monkeypatch):
+        """Narrow, not bare: a real bug in the schema lookup must surface."""
+        def boom(_type_name):
+            raise RuntimeError("something genuinely broken")
+
+        monkeypatch.setattr(kc._schema, "multivalued_attributes", boom)
+        with pytest.raises(RuntimeError, match="genuinely broken"):
+            _ = kc.element("d1").attrs
