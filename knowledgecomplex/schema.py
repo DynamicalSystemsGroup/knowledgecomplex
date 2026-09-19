@@ -356,6 +356,46 @@ class SchemaBuilder:
                 f"expected '{expected_kind}'"
             )
 
+    def multivalued_attributes(self, type_name: str) -> frozenset[str]:
+        """
+        Names of the attributes on type_name that may hold more than one value.
+
+        Includes inherited attributes. Callers need this to read an element back
+        faithfully: an attribute declared ``multiple=True`` is a set of values, and
+        collapsing it to one silently loses data.
+
+        Parameters
+        ----------
+        type_name : str
+            A registered type name.
+
+        Returns
+        -------
+        frozenset[str]
+
+        Example
+        -------
+        >>> sb = SchemaBuilder(namespace="demo")
+        >>> _ = sb.add_vertex_type("Doc", {"tag": text(multiple=True), "title": text()})
+        >>> sorted(sb.multivalued_attributes("Doc"))
+        ['tag']
+        """
+        from knowledgecomplex.exceptions import SchemaError
+        if type_name not in self._types:
+            raise SchemaError(f"Type '{type_name}' is not registered")
+
+        specs = {
+            **self._collect_inherited_attributes(type_name),
+            **self._types[type_name].get("attributes", {}),
+        }
+        names = set()
+        for name, spec in specs.items():
+            if isinstance(spec, dict):
+                spec = spec.get("vocab") or spec.get("text")
+            if getattr(spec, "multiple", False):
+                names.add(name)
+        return frozenset(names)
+
     def _collect_inherited_attributes(self, type_name: str) -> dict:
         """Walk the parent chain and collect all inherited attributes."""
         inherited = {}

@@ -1,6 +1,6 @@
 [project]
 name = "knowledgecomplex"
-version = "0.1.0"
+version = "0.2.0"
 description = "Typed simplicial complexes backed by OWL, SHACL, and SPARQL"
 readme = "README.md"
 requires-python = ">=3.11"

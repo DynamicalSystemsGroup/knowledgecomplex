@@ -101,6 +101,19 @@ elem = kc.element("req-001")
 elem.id      # "req-001"
 elem.type    # "requirement"
 elem.attrs   # {"title": "Boot time < 5s"}
+```
+
+`attrs` follows the schema: an attribute declared `multiple=True` comes back as a sorted
+list of its values — even when it currently holds only one — and every other attribute
+comes back as a single string. The list is sorted because the triple store has no
+inherent order, so repeated reads would otherwise be free to disagree.
+
+```python
+sb.add_vertex_type("doc", attributes={"tag": text(multiple=True), "title": text()})
+kc.add_vertex("d1", type="doc", title="Guide", tag=["b", "a"])
+
+kc.element("d1").attrs        # {"title": "Guide", "tag": ["a", "b"]}
+sb.multivalued_attributes("doc")   # frozenset({"tag"})
 
 kc.element_ids(type="test_case")   # ["tc-001", "tc-002"]
 kc.elements(type="test_case")      # [Element('tc-001', ...), Element('tc-002', ...)]
