@@ -8,6 +8,11 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # PyPI's trusted publisher for this project names this environment, and the
+    # claim GitHub sends has to match it. It is also the gate: publishing can be
+    # restricted here, to people who should release, rather than being available to
+    # anyone who can push a tag.
+    environment: pypi
     permissions:
       id-token: write  # required for trusted publishing
 
